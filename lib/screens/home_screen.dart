@@ -3,19 +3,20 @@ import 'package:provider/provider.dart';
 
 import '../app/routes.dart';
 import '../app/theme.dart';
+import '../viewmodels/catatan_store.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/lifecycle_badge.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/um_widgets.dart';
 
-/// Layar 1: Beranda StudyLog. Fokus utama: catatan kuliah.
-/// Fitur profil mahasiswa tersedia sebagai menu lain di bagian bawah.
+/// Tab 1: Beranda StudyLog. Fokus utama: catatan kuliah.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final student = context.watch<ProfileViewModel>().student;
+    final jumlah = context.watch<CatatanStore>().jumlah;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -50,53 +51,25 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Catat materi kuliah dengan mata kuliah, topik, judul, '
-                  'dan isi. Praktikum 1: form interaktif dengan validasi.',
-                ),
+                Text(jumlah == 0
+                    ? 'Belum ada catatan. Mulai dengan membuat catatan pertama.'
+                    : '$jumlah catatan (disimpan sementara di memori).'),
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: () =>
-                      Navigator.pushNamed(context, AppRoutes.studylogForm),
+                      Navigator.pushNamed(context, AppRoutes.daftar),
+                  icon: const Icon(Icons.list_alt),
+                  label: const Text('Lihat Catatan'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppRoutes.form),
                   icon: const Icon(Icons.edit_note),
                   label: const Text('Buat Catatan'),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Menu Lainnya',
-            style: textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: UmColors.navy,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _MenuButton(
-                  icon: Icons.person_outline,
-                  label: 'Profil',
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MenuButton(
-                  icon: Icons.contact_mail_outlined,
-                  label: 'Kontak',
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.contact),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _MenuButton(
-            icon: Icons.school_outlined,
-            label: 'Mata Kuliah',
-            onTap: () => Navigator.pushNamed(context, AppRoutes.courses),
           ),
           const SizedBox(height: 16),
           const LifecycleBadge(),
@@ -175,27 +148,6 @@ class _HeroCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _MenuButton extends StatelessWidget {
-  const _MenuButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon),
-      label: Text(label),
     );
   }
 }
