@@ -1,33 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../viewmodels/catatan_store.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import 'app_router.dart';
 import 'routes.dart';
 import 'theme.dart';
 
-/// Aplikasi StudyLog. Fitur Profil Mahasiswa menjadi tab pada bottom nav.
+/// Aplikasi StudyLog. Fitur Profil Mahasiswa tetap ada sebagai menu lain.
 class StudyLogApp extends StatelessWidget {
-  const StudyLogApp({super.key, this.viewModel, this.catatanStore});
+  const StudyLogApp({super.key, this.viewModel});
 
-  /// Opsional, dipakai pada pengujian untuk menyuntikkan state.
+  /// Opsional, dipakai pada pengujian untuk menyuntikkan ViewModel.
   final ProfileViewModel? viewModel;
-  final CatatanStore? catatanStore;
 
   @override
   Widget build(BuildContext context) {
-    // State dibuat satu kali di atas MaterialApp, sehingga semua layar
-    // berbagi state yang sama dan tidak hilang saat pindah layar / rotasi.
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ProfileViewModel>(
-          create: (_) => viewModel ?? ProfileViewModel(),
-        ),
-        ChangeNotifierProvider<CatatanStore>(
-          create: (_) => catatanStore ?? CatatanStore(),
-        ),
-      ],
+    // ProfileViewModel dibuat satu kali di atas MaterialApp, sehingga semua
+    // layar profil berbagi state yang sama. Form catatan (M1) memakai state
+    // lokal StatefulWidget sesuai Praktikum 1.
+    return ChangeNotifierProvider<ProfileViewModel>(
+      create: (_) => viewModel ?? ProfileViewModel(),
       child: MaterialApp(
         title: 'StudyLog',
         debugShowCheckedModeBanner: false,

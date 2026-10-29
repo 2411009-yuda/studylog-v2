@@ -58,22 +58,6 @@ ThemeData buildUmTheme() {
         borderSide: const BorderSide(color: UmColors.navy, width: 2),
       ),
     ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: Colors.white,
-      indicatorColor: UmColors.yellow,
-      iconTheme: WidgetStateProperty.resolveWith((states) {
-        final selected = states.contains(WidgetState.selected);
-        return IconThemeData(color: selected ? UmColors.navy : Colors.black54);
-      }),
-      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-        final selected = states.contains(WidgetState.selected);
-        return TextStyle(
-          fontSize: 12,
-          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-          color: selected ? UmColors.navy : Colors.black54,
-        );
-      }),
-    ),
     snackBarTheme: const SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: UmColors.navy,

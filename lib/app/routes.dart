@@ -1,17 +1,13 @@
 /// Daftar route aplikasi. Satu destination = satu route bernama sederhana.
-///
-/// Home ('/') adalah shell dengan bottom navigation: Beranda, Profil,
-/// Mata Kuliah, Kontak. Route di bawah ini adalah layar yang DITUMPUKKAN
-/// di atas shell (push/pop).
 class AppRoutes {
   static const home = '/';
 
-  // StudyLog
-  static const daftar = '/catatan';
-  static const detail = '/catatan/detail';
-  static const form = '/catatan/form';
+  // StudyLog (fokus utama)
+  static const studylogForm = '/studylog/form';
 
-  // Fitur profil mahasiswa
+  // Menu lain (fitur profil mahasiswa dari proyek sebelumnya)
+  static const profile = '/profil';
+  static const courses = '/mata-kuliah-semester';
   static const courseDetail = '/mata-kuliah';
-  static const contact = '/kontak'; // juga dipakai tombol "Lihat Kontak"
+  static const contact = '/kontak';
 }
