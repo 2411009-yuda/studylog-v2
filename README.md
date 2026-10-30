@@ -9,6 +9,10 @@ Proyek PjBL mata kuliah **Pemrograman Aplikasi Bergerak** — Universitas Mulia,
 Program Studi Informatika. Mengikuti *Workbook Praktikum 1: StudyLog* (M1–M3)
 dengan pengembangan mandiri di bagian [Fitur pengembangan](#fitur-pengembangan-pjbl).
 
+| |                                               |
+|---|-----------------------------------------------|
+| Nama / NIM | Yuda Pratama / 2411009                  |
+| Kelas | IFB5J                                         |
 | |                                              |
 |---|----------------------------------------------|
 | Nama / NIM | Yuda Pratama / 2411009                  |
