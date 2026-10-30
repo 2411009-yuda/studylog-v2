@@ -11,7 +11,7 @@ dengan pengembangan mandiri di bagian [Fitur pengembangan](#fitur-pengembangan-p
 
 | |                                               |
 |---|-----------------------------------------------|
-| Nama / NIM | Yuda Pratama Putra / 2411009                  |
+| Nama / NIM | Yuda Pratama / 2411009                  |
 | Kelas | IFB5J                                         |
 | Repository | `https://github.com/2411009-yuda/studylog-v2` |
 | Perangkat uji | `Poco X3 GT`                                  |
@@ -365,7 +365,7 @@ Isi kolom hasil setelah mengujinya di HP/emulator.
 
 | Nama / NIM | Peran | Kontribusi utama |
 |---|---|---|
-| Yuda Pratama Putra / 2411009 | `[ISI]` | `[ISI: mis. UI, API, sinkronisasi, pengujian]` |
+| Yuda Pratama / 2411009 | `[ISI]` | `[ISI: mis. UI, API, sinkronisasi, pengujian]` |
 | `[ISI jika berkelompok]` | | |
 
 ---
