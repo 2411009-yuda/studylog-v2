@@ -76,6 +76,21 @@ class FakeServer {
   /// Jika true, semua permintaan gagal seperti server mati.
   bool down = false;
 
+  /// Jika true, server MEMPROSES permintaan tetapi balasannya hilang di jalan
+  /// (aplikasi melihat kegagalan jaringan). Menguji pengiriman ulang idempoten.
+  bool dropResponse = false;
+
+  /// Jika diisi, PUT klien ditolak dengan 400 dan pesan ini.
+  String? tolakKlien;
+
+  /// Dipanggil di tengah pemrosesan PUT klien (menyimulasikan pengguna yang
+  /// mengubah data saat pengiriman sedang berjalan).
+  Future<void> Function()? onPutKlien;
+
+  int putKlienCount = 0;
+  int deleteKlienCount = 0;
+  int _urutClient = 1;
+
   /// Tanggal yang diberikan "server" pada catatan baru.
   String tanggalBaru = '2026-10-30 20:40:00';
 
@@ -89,10 +104,13 @@ class FakeServer {
     String judul = 'Dasar setState',
     String isi = 'setState memicu build ulang.',
     String? tanggal,
+    String? clientId,
   }) {
     final mk = mataKuliah.firstWhere((m) => m['id'] == mataKuliahId);
     final row = <String, Object?>{
       'id': _berikutnya++,
+      'clientId': clientId ??
+          '00000000-0000-4000-8000-${(_urutClient++).toString().padLeft(12, '0')}',
       'mataKuliahId': mataKuliahId,
       'mataKuliahKode': mk['kode'],
       'mataKuliahNama': mk['nama'],
@@ -115,6 +133,12 @@ class FakeServer {
 
   Future<http.Response> _handle(http.Request r) async {
     if (down) throw http.ClientException('connection refused');
+    final balasan = await _proses(r);
+    if (dropResponse) throw http.ClientException('connection reset');
+    return balasan;
+  }
+
+  Future<http.Response> _proses(http.Request r) async {
 
     final seg = r.url.pathSegments;
     if (seg.length < 2 || seg[0] != 'api') return _error(404, 'Endpoint tidak ditemukan');
@@ -134,6 +158,48 @@ class FakeServer {
           topik: (body['topik'] as String).trim(),
           judul: (body['judul'] as String).trim(),
           isi: (body['isi'] as String).trim(),
+        );
+        return _json(row, 201);
+      }
+    }
+
+    // ---- Endpoint sinkronisasi (idempoten, dialamatkan dengan clientId) ----
+    if (seg.length == 4 && seg[2] == 'klien') {
+      final clientId = seg[3];
+      if (r.method == 'DELETE') {
+        deleteKlienCount++;
+        catatan.removeWhere((c) => c['clientId'] == clientId);
+        return http.Response('', 204);
+      }
+      if (r.method == 'PUT') {
+        if (tolakKlien != null) return _error(400, tolakKlien!);
+        putKlienCount++;
+        await onPutKlien?.call();
+        final body = jsonDecode(r.body) as Map<String, dynamic>;
+        final salah = _validasi(body);
+        if (salah != null) return _error(400, salah);
+        final mk = mataKuliah.firstWhere((m) => m['id'] == body['mataKuliahId']);
+        final index = catatan.indexWhere((c) => c['clientId'] == clientId);
+        if (index >= 0) {
+          // Tanggal pembuatan tidak diubah oleh pembaruan.
+          catatan[index] = {
+            ...catatan[index],
+            'mataKuliahId': mk['id'],
+            'mataKuliahKode': mk['kode'],
+            'mataKuliahNama': mk['nama'],
+            'topik': (body['topik'] as String).trim(),
+            'judul': (body['judul'] as String).trim(),
+            'isi': (body['isi'] as String).trim(),
+          };
+          return _json(catatan[index]);
+        }
+        final row = seedCatatan(
+          mataKuliahId: body['mataKuliahId'] as int,
+          topik: (body['topik'] as String).trim(),
+          judul: (body['judul'] as String).trim(),
+          isi: (body['isi'] as String).trim(),
+          tanggal: body['tanggal'] as String?,
+          clientId: clientId,
         );
         return _json(row, 201);
       }

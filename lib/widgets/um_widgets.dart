@@ -23,8 +23,12 @@ class UmStripe extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-AppBar umAppBar(String title) {
-  return AppBar(title: Text(title), bottom: const UmStripe());
+AppBar umAppBar(String title, {List<Widget>? actions}) {
+  return AppBar(
+    title: Text(title),
+    actions: actions,
+    bottom: const UmStripe(),
+  );
 }
 
 /// Kartu putih dengan sudut membulat yang dipakai di semua layar.

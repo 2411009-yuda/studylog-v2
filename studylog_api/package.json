@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "db:init": "node src/init-db.js",
+    "db:migrate": "node src/init-db.js",
     "test": "node --test"
   },
   "dependencies": {

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:profil_mahasiswa/utils/validators.dart';
 
 import 'fake_server.dart';
+import 'in_memory_local_store.dart';
 import 'test_helpers.dart';
 
 Future<void> bukaDaftar(WidgetTester tester) async {
@@ -105,7 +106,7 @@ void main() {
 
       // Form tertutup, kembali ke Beranda dengan jumlah terbaru.
       expect(find.text('StudyLog'), findsOneWidget);
-      expect(find.text('1 catatan tersimpan di database.'), findsOneWidget);
+      expect(find.text('1 catatan tersimpan.'), findsOneWidget);
       expect(server.catatan.single['judul'], 'Dasar setState');
 
       await bukaDaftar(tester);
@@ -198,51 +199,18 @@ void main() {
     testWidgets('T6 Persistence: aplikasi dibuka ulang, data masih ada',
         (tester) async {
       final server = FakeServer();
-      await bukaApp(tester, server);
+      final local = InMemoryLocalStore();
+      await bukaApp(tester, server, local: local);
       await tapPlus(tester);
       await isiForm(tester);
       await simpanForm(tester);
 
-      // "Tutup" aplikasi: bongkar widget tree. Database (server) tetap ada.
+      // "Tutup" aplikasi: bongkar widget tree. SQLite lokal dan MySQL tetap ada.
       await tester.pumpWidget(const SizedBox());
-      await bukaApp(tester, server);
+      await bukaApp(tester, server, local: local);
 
-      expect(find.text('1 catatan tersimpan di database.'), findsOneWidget);
+      expect(find.text('1 catatan tersimpan.'), findsOneWidget);
       await bukaDaftar(tester);
-      expect(find.text('Dasar setState'), findsOneWidget);
-    });
-  });
-
-  group('Gangguan koneksi', () {
-    testWidgets('server mati -> pesan error dan Coba lagi memulihkan',
-        (tester) async {
-      final server = FakeServer()
-        ..seedCatatan()
-        ..down = true;
-      await bukaApp(tester, server);
-      await bukaDaftar(tester);
-
-      expect(find.textContaining('Tidak dapat membaca catatan'), findsOneWidget);
-
-      server.down = false;
-      await tester.tap(find.text('Coba lagi'));
-      await tester.pumpAndSettle();
-      expect(find.text('Dasar setState'), findsOneWidget);
-    });
-
-    testWidgets('simpan saat server mati -> SnackBar gagal, form tetap terbuka',
-        (tester) async {
-      final server = FakeServer();
-      await bukaApp(tester, server);
-      await tapPlus(tester);
-      await isiForm(tester);
-
-      server.down = true;
-      await simpanForm(tester);
-
-      expect(find.textContaining('Gagal menyimpan'), findsOneWidget);
-      expect(find.text('Tambah Catatan'), findsOneWidget);
-      // Isian pengguna tidak hilang.
       expect(find.text('Dasar setState'), findsOneWidget);
     });
   });

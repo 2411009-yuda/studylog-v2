@@ -1,7 +1,15 @@
-/// Satu catatan kuliah. Immutable. Data tersimpan di MySQL lewat API.
+/// Satu catatan kuliah. Immutable.
+///
+/// Aplikasi bekerja offline-first, sehingga satu catatan punya tiga identitas:
+/// - [id]       : id lokal (SQLite di perangkat), dipakai layar & route.
+/// - [clientId] : UUID yang dibuat aplikasi; identitas lintas perangkat/server.
+/// - [serverId] : id di MySQL; null sampai catatan berhasil dikirim.
 class Catatan {
   const Catatan({
     this.id,
+    this.clientId = '',
+    this.serverId,
+    this.menunggu = false,
     required this.mataKuliahId,
     this.mataKuliahKode = '',
     this.mataKuliahNama = '',
@@ -12,6 +20,12 @@ class Catatan {
   });
 
   final int? id;
+  final String clientId;
+  final int? serverId;
+
+  /// True jika ada perubahan catatan ini yang belum terkirim ke server.
+  final bool menunggu;
+
   final int mataKuliahId;
   final String mataKuliahKode;
   final String mataKuliahNama;
@@ -20,9 +34,37 @@ class Catatan {
   final String isi;
   final DateTime tanggal;
 
-  /// Bentuk lengkap (dipakai untuk uji round-trip).
+  Catatan copyWith({
+    int? id,
+    String? clientId,
+    int? serverId,
+    bool? menunggu,
+    int? mataKuliahId,
+    String? mataKuliahKode,
+    String? mataKuliahNama,
+    String? topik,
+    String? judul,
+    String? isi,
+    DateTime? tanggal,
+  }) =>
+      Catatan(
+        id: id ?? this.id,
+        clientId: clientId ?? this.clientId,
+        serverId: serverId ?? this.serverId,
+        menunggu: menunggu ?? this.menunggu,
+        mataKuliahId: mataKuliahId ?? this.mataKuliahId,
+        mataKuliahKode: mataKuliahKode ?? this.mataKuliahKode,
+        mataKuliahNama: mataKuliahNama ?? this.mataKuliahNama,
+        topik: topik ?? this.topik,
+        judul: judul ?? this.judul,
+        isi: isi ?? this.isi,
+        tanggal: tanggal ?? this.tanggal,
+      );
+
+  /// Bentuk JSON seperti yang dikirim server ('id' = id di server).
   Map<String, Object?> toJson() => {
-        if (id != null) 'id': id,
+        if (serverId != null) 'id': serverId,
+        'clientId': clientId,
         'mataKuliahId': mataKuliahId,
         'mataKuliahKode': mataKuliahKode,
         'mataKuliahNama': mataKuliahNama,
@@ -32,16 +74,19 @@ class Catatan {
         'tanggal': tanggal.toIso8601String(),
       };
 
-  /// Body untuk POST/PUT. Tanggal dan nama mata kuliah diurus server.
+  /// Body untuk PUT /api/catatan/klien/:clientId. Tanggal pembuatan ikut
+  /// dikirim agar catatan yang dibuat offline tetap bertanggal saat dibuat.
   Map<String, Object?> toRequestBody() => {
         'mataKuliahId': mataKuliahId,
         'topik': topik,
         'judul': judul,
         'isi': isi,
+        'tanggal': tanggalServer,
       };
 
   factory Catatan.fromJson(Map<String, dynamic> json) => Catatan(
-        id: json['id'] as int?,
+        serverId: json['id'] as int?,
+        clientId: (json['clientId'] as String?) ?? '',
         mataKuliahId: json['mataKuliahId'] as int,
         mataKuliahKode: (json['mataKuliahKode'] as String?) ?? '',
         mataKuliahNama: (json['mataKuliahNama'] as String?) ?? '',
@@ -53,6 +98,11 @@ class Catatan {
       );
 
   static String _dua(int n) => n.toString().padLeft(2, '0');
+
+  /// 'YYYY-MM-DD HH:MM:SS' (waktu dinding), format yang dipakai server.
+  String get tanggalServer => '${tanggal.year.toString().padLeft(4, '0')}-'
+      '${_dua(tanggal.month)}-${_dua(tanggal.day)} '
+      '${_dua(tanggal.hour)}:${_dua(tanggal.minute)}:${_dua(tanggal.second)}';
 
   /// Contoh: 30/10/2026
   String get tanggalLabel => '${tanggal.day}/${tanggal.month}/${tanggal.year}';

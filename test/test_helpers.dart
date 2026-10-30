@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:profil_mahasiswa/app/app.dart';
+import 'package:profil_mahasiswa/data/local_store.dart';
+import 'package:profil_mahasiswa/services/ekspor_service.dart';
 
 import 'fake_server.dart';
+import 'in_memory_local_store.dart';
 
 /// Jumat 30 Okt 2026 20:40 -> kelas Pemrograman Aplikasi Bergerak berlangsung.
 final jumatMalam = DateTime(2026, 10, 30, 20, 40);
@@ -19,15 +22,39 @@ void useTallScreen(WidgetTester tester) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
+/// Pengganti clipboard dan share sheet (tidak tersedia pada lingkungan tes).
+class FakeEksporService implements EksporService {
+  final List<String> disalin = [];
+  final List<String> dibagikan = [];
+
+  @override
+  Future<void> salin(String teks) async => disalin.add(teks);
+
+  @override
+  Future<void> bagikan(String teks, {String? subjek}) async =>
+      dibagikan.add(teks);
+}
+
 /// Membuka aplikasi dengan server tiruan dan jam yang dapat diatur.
 Future<void> bukaApp(
   WidgetTester tester,
   FakeServer server, {
   DateTime? sekarang,
+  EksporService? ekspor,
+  LocalStore? local,
+  Duration? interval,
 }) async {
   useTallScreen(tester);
   final waktu = sekarang ?? jumatMalam;
-  await tester.pumpWidget(StudyLogApp(apiClient: server.api, clock: () => waktu));
+  await tester.pumpWidget(StudyLogApp(
+    apiClient: server.api,
+    clock: () => waktu,
+    eksporService: ekspor ?? FakeEksporService(),
+    // Penyimpanan lokal baru untuk tiap pembukaan, kecuali diberikan
+    // (menyimulasikan "tutup lalu buka aplikasi" dengan data lokal yang sama).
+    localStore: local ?? InMemoryLocalStore(),
+    sinkronInterval: interval,
+  ));
   await tester.pumpAndSettle();
 }
 

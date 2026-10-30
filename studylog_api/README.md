@@ -7,8 +7,11 @@ REST API untuk aplikasi Flutter StudyLog. Tiga tabel relasional:
 1. Pasang Node.js (v18+) dan MySQL (atau MariaDB), pastikan MySQL berjalan.
 2. `cp .env.example .env`, lalu isi `DB_USER` / `DB_PASSWORD` sesuai MySQL-mu.
 3. `npm install`
-4. `npm run db:init`   → membuat database `studylog`, tabel, dan data awal
-   (aman diulang; data catatan tidak dihapus).
+4. `npm run db:init`   → membuat database `studylog`, tabel, dan data awal.
+   Aman diulang dan **aman untuk database lama**: data catatan tidak dihapus,
+   dan kolom `catatan.client_id` (UUID, dibutuhkan antrian offline) ditambahkan
+   serta diisi otomatis pada catatan yang sudah ada (`npm run db:migrate`
+   menjalankan hal yang sama).
 5. `npm start`         → API di `http://localhost:3000/api`
 
 Uji cepat: buka `http://localhost:3000/api/mata-kuliah` di browser.
@@ -25,6 +28,19 @@ Uji cepat: buka `http://localhost:3000/api/mata-kuliah` di browser.
 | PUT | `/api/catatan/:id` | ubah catatan |
 | DELETE | `/api/catatan/:id` | hapus catatan → 204 |
 
+### Endpoint sinkronisasi (dipakai antrian offline aplikasi)
+Dialamatkan dengan `clientId` (UUID buatan aplikasi) dan **idempoten**: aman
+dikirim ulang bila balasan hilang karena jaringan putus.
+
+| Metode | Path | Keterangan |
+|---|---|---|
+| PUT | `/api/catatan/klien/:clientId` | buat jika belum ada (201), ubah jika sudah ada (200) |
+| DELETE | `/api/catatan/klien/:clientId` | hapus; selalu 204 (yang sudah hilang dianggap berhasil) |
+
+Body PUT sama dengan POST, ditambah `tanggal` opsional (`YYYY-MM-DD HH:MM:SS`)
+agar catatan yang dibuat offline tetap bertanggal saat dibuat. `tanggal`
+hanya dipakai saat membuat; pembaruan tidak mengubahnya.
+
 Body POST/PUT: `{ "mataKuliahId": 5, "topik": "State", "judul": "...", "isi": "..." }`
 Kesalahan validasi → `400 { "error": "pesan" }`; tidak ditemukan → `404`.
 
@@ -36,4 +52,4 @@ Kesalahan validasi → `400 { "error": "pesan" }`; tidak ditemukan → `404`.
   `--dart-define=API_BASE_URL=http://192.168.1.10:3000` (izinkan port 3000 di firewall).
 
 ## Pengujian
-`npm test` menjalankan unit test validator.
+`npm test` menjalankan unit test validator (tidak membutuhkan database).

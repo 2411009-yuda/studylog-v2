@@ -9,6 +9,7 @@ import '../viewmodels/mata_kuliah_view_model.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/lifecycle_badge.dart';
 import '../widgets/profile_avatar.dart';
+import '../widgets/status_sinkron_banner.dart';
 import '../widgets/um_widgets.dart';
 
 /// Tab 1: Beranda StudyLog. Fokus utama: catatan kuliah.
@@ -34,7 +35,7 @@ class HomeScreen extends StatelessWidget {
     } else if (catatanVm.catatan.isEmpty) {
       ringkasan = 'Belum ada catatan. Mulai dengan membuat catatan pertama.';
     } else {
-      ringkasan = '${catatanVm.catatan.length} catatan tersimpan di database.';
+      ringkasan = '${catatanVm.catatan.length} catatan tersimpan.';
     }
 
     return Scaffold(
@@ -48,6 +49,7 @@ class HomeScreen extends StatelessWidget {
             semester: student.semester,
           ),
           const SizedBox(height: 16),
+          const StatusSinkronBanner(),
           if (terdekat != null && course != null) ...[
             SectionCard(
               child: Row(

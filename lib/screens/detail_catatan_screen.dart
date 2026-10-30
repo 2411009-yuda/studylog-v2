@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../app/routes.dart';
 import '../app/theme.dart';
+import '../utils/ekspor_aksi.dart';
+import '../utils/ekspor_teks.dart';
 import '../viewmodels/catatan_view_model.dart';
 import '../widgets/um_widgets.dart';
 import 'catatan_form_screen.dart';
@@ -26,8 +28,29 @@ class DetailCatatanScreen extends StatelessWidget {
       );
     }
 
+    final teks = eksporSatu(catatan);
+
     return Scaffold(
-      appBar: umAppBar('Detail Catatan'),
+      appBar: umAppBar(
+        'Detail Catatan',
+        actions: [
+          IconButton(
+            tooltip: 'Salin teks',
+            icon: const Icon(Icons.copy),
+            onPressed: () => salinTeks(
+              context,
+              teks,
+              pesan: 'Catatan disalin ke clipboard.',
+            ),
+          ),
+          IconButton(
+            tooltip: 'Bagikan',
+            icon: const Icon(Icons.share),
+            onPressed: () =>
+                bagikanTeks(context, teks, subjek: catatan.judul),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -44,6 +67,16 @@ class DetailCatatanScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          if (catatan.menunggu) ...[
+            const SizedBox(height: 4),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                avatar: Icon(Icons.cloud_upload_outlined, size: 18),
+                label: Text('Menunggu sinkron'),
+              ),
+            ),
+          ],
           Text('Topik: ${catatan.topik}'),
           Text('Dibuat: ${catatan.tanggalWaktuLabel}'),
           const Divider(height: 32),

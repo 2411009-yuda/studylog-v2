@@ -1,8 +1,9 @@
 'use strict';
 
+const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
-const { validateCatatan, parseId } = require('./validators');
+const { validateCatatan, parseId, isUuid } = require('./validators');
 
 const hhmm = (t) => String(t).slice(0, 5); // '19:00:00' -> '19:00'
 
@@ -28,6 +29,7 @@ const mapJadwal = (r) => ({
 
 const mapCatatan = (r) => ({
   id: r.id,
+  clientId: r.client_id,
   mataKuliahId: r.mata_kuliah_id,
   mataKuliahKode: r.kode,
   mataKuliahNama: r.nama,
@@ -38,7 +40,7 @@ const mapCatatan = (r) => ({
 });
 
 const SELECT_CATATAN = `
-  SELECT c.id, c.mata_kuliah_id, m.kode, m.nama,
+  SELECT c.id, c.client_id, c.mata_kuliah_id, m.kode, m.nama,
          c.topik, c.judul, c.isi, c.tanggal
     FROM catatan c
     JOIN mata_kuliah m ON m.id = c.mata_kuliah_id`;
@@ -93,9 +95,10 @@ function createApp(pool) {
     if (error) return res.status(400).json({ error });
     try {
       const [result] = await pool.query(
-        `INSERT INTO catatan (mata_kuliah_id, topik, judul, isi)
-         VALUES (?, ?, ?, ?)`,
-        [value.mataKuliahId, value.topik, value.judul, value.isi]);
+        `INSERT INTO catatan (client_id, mata_kuliah_id, topik, judul, isi, tanggal)
+         VALUES (?, ?, ?, ?, ?, COALESCE(?, NOW()))`,
+        [crypto.randomUUID(), value.mataKuliahId, value.topik, value.judul,
+          value.isi, value.tanggal]);
       res.status(201).json(await findCatatan(result.insertId));
     } catch (e) {
       if (e.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -134,6 +137,61 @@ function createApp(pool) {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Catatan tidak ditemukan' });
     }
+    res.status(204).end();
+  }));
+
+  // ---- Endpoint sinkronisasi (idempoten, dialamatkan dengan clientId) ----
+  // Aman dikirim ulang berkali-kali: antrian offline di aplikasi memakainya.
+
+  /** Buat jika belum ada, ubah jika sudah ada (clientId = identitas catatan). */
+  app.put('/api/catatan/klien/:clientId', wrap(async (req, res) => {
+    const clientId = String(req.params.clientId).toLowerCase();
+    if (!isUuid(clientId)) return res.status(400).json({ error: 'clientId tidak valid' });
+    const { error, value } = validateCatatan(req.body);
+    if (error) return res.status(400).json({ error });
+
+    const simpan = async () => {
+      const [rows] = await pool.query(
+        'SELECT id FROM catatan WHERE client_id = ?', [clientId]);
+      if (rows[0]) {
+        // Tanggal pembuatan tidak diubah oleh pembaruan.
+        await pool.query(
+          `UPDATE catatan SET mata_kuliah_id = ?, topik = ?, judul = ?, isi = ?
+            WHERE client_id = ?`,
+          [value.mataKuliahId, value.topik, value.judul, value.isi, clientId]);
+        return { status: 200, id: rows[0].id };
+      }
+      const [result] = await pool.query(
+        `INSERT INTO catatan (client_id, mata_kuliah_id, topik, judul, isi, tanggal)
+         VALUES (?, ?, ?, ?, ?, COALESCE(?, NOW()))`,
+        [clientId, value.mataKuliahId, value.topik, value.judul, value.isi,
+          value.tanggal]);
+      return { status: 201, id: result.insertId };
+    };
+
+    try {
+      let hasil;
+      try {
+        hasil = await simpan();
+      } catch (e) {
+        // Dua permintaan dengan clientId sama bersamaan: ulangi sekali (jalur ubah).
+        if (e.code !== 'ER_DUP_ENTRY') throw e;
+        hasil = await simpan();
+      }
+      res.status(hasil.status).json(await findCatatan(hasil.id));
+    } catch (e) {
+      if (e.code === 'ER_NO_REFERENCED_ROW_2') {
+        return res.status(400).json({ error: 'Mata kuliah tidak ditemukan' });
+      }
+      throw e;
+    }
+  }));
+
+  /** Hapus berdasarkan clientId. Selalu 204 (menghapus yang sudah hilang = berhasil). */
+  app.delete('/api/catatan/klien/:clientId', wrap(async (req, res) => {
+    const clientId = String(req.params.clientId).toLowerCase();
+    if (!isUuid(clientId)) return res.status(400).json({ error: 'clientId tidak valid' });
+    await pool.query('DELETE FROM catatan WHERE client_id = ?', [clientId]);
     res.status(204).end();
   }));
 

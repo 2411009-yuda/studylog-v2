@@ -62,28 +62,48 @@ class _CatatanFormScreenState extends State<CatatanFormScreen> {
     setState(() => _menyimpan = true);
 
     final awal = _awal;
-    final data = Catatan(
-      id: awal?.id,
-      mataKuliahId: _mataKuliahId!,
-      topik: _topik.text.trim(),
-      judul: _judul.text.trim(),
-      isi: _isi.text.trim(),
-      tanggal: awal?.tanggal ?? DateTime.now(),
-    );
+    final course =
+        context.read<MataKuliahViewModel>().courseById(_mataKuliahId!);
+    final kode = course?.kode ?? awal?.mataKuliahKode ?? '';
+    final namaMk = course?.nama ?? awal?.mataKuliahNama ?? '';
+
+    // Mengubah: copyWith mempertahankan id lokal, clientId, dan serverId.
+    final data = awal == null
+        ? Catatan(
+            mataKuliahId: _mataKuliahId!,
+            mataKuliahKode: kode,
+            mataKuliahNama: namaMk,
+            topik: _topik.text.trim(),
+            judul: _judul.text.trim(),
+            isi: _isi.text.trim(),
+            tanggal: DateTime.now(),
+          )
+        : awal.copyWith(
+            mataKuliahId: _mataKuliahId!,
+            mataKuliahKode: kode,
+            mataKuliahNama: namaMk,
+            topik: _topik.text.trim(),
+            judul: _judul.text.trim(),
+            isi: _isi.text.trim(),
+          );
 
     final vm = context.read<CatatanViewModel>();
     final messenger = ScaffoldMessenger.of(context);
     try {
+      // Hanya menulis ke penyimpanan lokal; pengiriman ke server menyusul.
       if (awal == null) {
         await vm.tambahCatatan(data);
       } else {
         await vm.ubahCatatan(data);
       }
       if (!mounted) return;
+      final offline = vm.status == StatusSinkron.offline;
       messenger.showSnackBar(SnackBar(
-        content: Text(awal == null
-            ? 'Catatan tersimpan di database.'
-            : 'Catatan diperbarui.'),
+        content: Text(offline
+            ? 'Disimpan offline. Akan disinkronkan saat terhubung.'
+            : awal == null
+                ? 'Catatan tersimpan.'
+                : 'Catatan diperbarui.'),
       ));
       Navigator.pop(context, true);
     } catch (e) {

@@ -55,6 +55,17 @@ class CourseListScreen extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text('${vm.courses.length} mata kuliah · ${vm.totalSks} SKS'),
+            if (vm.dariCache)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Offline · menampilkan data tersimpan di perangkat',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: UmColors.blue),
+                ),
+              ),
             const SizedBox(height: 8),
             for (final course in vm.courses) _CourseTile(course: course),
           ],

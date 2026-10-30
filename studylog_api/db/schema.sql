@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS jadwal (
 
 CREATE TABLE IF NOT EXISTS catatan (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  client_id      CHAR(36)     NOT NULL UNIQUE,   -- identitas dari aplikasi (UUID)
   mata_kuliah_id INT UNSIGNED NOT NULL,
   topik          VARCHAR(100) NOT NULL,
   judul          VARCHAR(150) NOT NULL,

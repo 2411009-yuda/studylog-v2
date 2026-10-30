@@ -6,7 +6,7 @@ import '../models/course.dart';
 import '../models/jadwal.dart';
 import '../utils/jadwal_utils.dart';
 
-/// State mata kuliah + jadwal (dari database lewat API).
+/// State mata kuliah + jadwal (dari database lewat API, dengan cache offline).
 class MataKuliahViewModel extends ChangeNotifier {
   MataKuliahViewModel(this.repository, {DateTime Function()? clock})
       : _clock = clock ?? DateTime.now;
@@ -23,6 +23,9 @@ class MataKuliahViewModel extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
+  /// True jika data yang tampil berasal dari cache (server tidak terjangkau).
+  bool dariCache = false;
+
   int get totalSks => _courses.fold(0, (sum, c) => sum + c.sks);
 
   Future<void> muat() async {
@@ -30,12 +33,10 @@ class MataKuliahViewModel extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final hasil = await Future.wait([
-        repository.semuaMataKuliah(),
-        repository.semuaJadwal(),
-      ]);
-      _courses = hasil[0] as List<Course>;
-      _jadwal = hasil[1] as List<Jadwal>;
+      final data = await repository.muat();
+      _courses = data.courses;
+      _jadwal = data.jadwal;
+      dariCache = data.dariCache;
     } catch (e) {
       error = 'Tidak dapat memuat mata kuliah: ${pesanError(e)}';
     } finally {
