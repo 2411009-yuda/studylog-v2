@@ -9,12 +9,12 @@ Proyek PjBL mata kuliah **Pemrograman Aplikasi Bergerak** — Universitas Mulia,
 Program Studi Informatika. Mengikuti *Workbook Praktikum 1: StudyLog* (M1–M3)
 dengan pengembangan mandiri di bagian [Fitur pengembangan](#fitur-pengembangan-pjbl).
 
-| |                                               |
-|---|-----------------------------------------------|
-| Nama / NIM | Yuda Pratama Putra / 2411009                  |
-| Kelas | IFB5J                                         |
+| |                                              |
+|---|----------------------------------------------|
+| Nama / NIM | Yuda Pratama / 2411009                  |
+| Kelas | IFB5J                                        |
 | Repository | `https://github.com/2411009-yuda/studylog-v2` |
-| Perangkat uji | `Poco X3 GT`                                  |
+| Perangkat uji | `Poco X3 GT`                                 |
 
 > Fitur **Profil Mahasiswa** dari proyek sebelumnya tetap ada sebagai menu
 > lain (tab Profil, Mata Kuliah, dan Kontak).
@@ -365,7 +365,7 @@ Isi kolom hasil setelah mengujinya di HP/emulator.
 
 | Nama / NIM | Peran | Kontribusi utama |
 |---|---|---|
-| Yuda Pratama Putra / 2411009 | `[ISI]` | `[ISI: mis. UI, API, sinkronisasi, pengujian]` |
+| Yuda Pratama / 2411009 | `[ISI]` | `[ISI: mis. UI, API, sinkronisasi, pengujian]` |
 | `[ISI jika berkelompok]` | | |
 
 ---
