@@ -1,104 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:profil_mahasiswa/app/app.dart';
 
-/// Layar uji bawaan hanya 800x600, sehingga tombol di bagian bawah layar
-/// berada di luar jangkauan tap. Layar yang lebih tinggi memuat semua konten.
-void useTallScreen(WidgetTester tester) {
-  tester.view.physicalSize = const Size(800, 1600);
-  tester.view.devicePixelRatio = 1.0;
-  addTearDown(tester.view.resetPhysicalSize);
-  addTearDown(tester.view.resetDevicePixelRatio);
-}
+import 'fake_server.dart';
+import 'test_helpers.dart';
 
 void main() {
-  testWidgets('Beranda -> Profil -> kembali mengikuti back stack',
-          (tester) async {
-        useTallScreen(tester);
-        await tester.pumpWidget(const StudyLogApp());
-        expect(find.text('StudyLog'), findsOneWidget);
+  testWidgets('Bottom bar: Beranda -> Profil -> Beranda', (tester) async {
+    await bukaApp(tester, FakeServer());
+    expect(find.text('StudyLog'), findsOneWidget);
 
-        await tester.tap(find.text('Profil'));
-        await tester.pumpAndSettle();
-        expect(find.text('NIM'), findsOneWidget);
-        expect(find.text('2411009'), findsOneWidget);
+    await tapTab(tester, 'Profil');
+    expect(find.text('NIM'), findsOneWidget);
+    expect(find.text('2411009'), findsOneWidget);
 
-        await tester.pageBack();
-        await tester.pumpAndSettle();
-        expect(find.text('StudyLog'), findsOneWidget);
-      });
+    await tapTab(tester, 'Beranda');
+    expect(find.text('StudyLog'), findsOneWidget);
+  });
 
-  testWidgets('Beranda -> Mata Kuliah -> Detail mengirim id lewat route',
-          (tester) async {
-        useTallScreen(tester);
-        await tester.pumpWidget(const StudyLogApp());
+  testWidgets('Tab Mata Kuliah memuat data dari server -> Detail',
+      (tester) async {
+    await bukaApp(tester, FakeServer());
 
-        await tester.tap(find.text('Mata Kuliah'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Pemrograman Aplikasi Bergerak'));
-        await tester.pumpAndSettle();
-        expect(find.text('Detail Mata Kuliah'), findsOneWidget);
-        expect(find.text('Prasyarat'), findsOneWidget);
-        expect(find.text('Algoritme dan Pemrograman'), findsOneWidget);
+    await tapTab(tester, 'Mata Kuliah');
+    expect(find.text('8 mata kuliah · 23 SKS'), findsOneWidget);
 
-        // Back stack: Detail -> Daftar Mata Kuliah -> Beranda.
-        await tester.pageBack();
-        await tester.pumpAndSettle();
-        expect(find.text('8 mata kuliah · 23 SKS'), findsOneWidget);
+    await tester.tap(find.text('Pemrograman Aplikasi Bergerak'));
+    await tester.pumpAndSettle();
+    expect(find.text('Detail Mata Kuliah'), findsOneWidget);
+    expect(find.text('Prasyarat'), findsOneWidget);
+    expect(find.text('Algoritme dan Pemrograman'), findsOneWidget);
+    // Dosen dan jadwal berasal dari tabel mata_kuliah dan jadwal.
+    expect(find.text('PRAMUDYA PRIMA INSAN, S.Kom., M.Kom.'), findsOneWidget);
+    expect(find.textContaining('Jumat 20:30–22:00'), findsOneWidget);
 
-        await tester.pageBack();
-        await tester.pumpAndSettle();
-        expect(find.text('StudyLog'), findsOneWidget);
-      });
+    // Kembali ke daftar mata kuliah (tab tetap Mata Kuliah).
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('8 mata kuliah · 23 SKS'), findsOneWidget);
+  });
 
-  testWidgets('Beranda -> Kontak menampilkan email, web, dan GitHub',
-          (tester) async {
-        useTallScreen(tester);
-        await tester.pumpWidget(const StudyLogApp());
+  testWidgets('Tab Mata Kuliah menampilkan error + Coba lagi saat server mati',
+      (tester) async {
+    final server = FakeServer()..down = true;
+    await bukaApp(tester, server);
+    await tapTab(tester, 'Mata Kuliah');
 
-        await tester.tap(find.text('Kontak'));
-        await tester.pumpAndSettle();
+    expect(find.textContaining('Tidak dapat memuat mata kuliah'),
+        findsOneWidget);
 
-        expect(find.text('2411009@students.universitasmulia.ac.id'),
-            findsOneWidget);
-        expect(find.text('https://yuda-pratama.web.id/'), findsOneWidget);
-        expect(find.text('https://github.com/2411009-yuda'), findsOneWidget);
-      });
+    server.down = false;
+    await tester.tap(find.text('Coba lagi'));
+    await tester.pumpAndSettle();
+    expect(find.text('8 mata kuliah · 23 SKS'), findsOneWidget);
+  });
 
-  testWidgets('state di ViewModel bertahan saat pindah layar dan rotasi',
-          (tester) async {
-        useTallScreen(tester);
-        await tester.pumpWidget(const StudyLogApp());
+  testWidgets('Tab Kontak menampilkan email, web, dan GitHub', (tester) async {
+    await bukaApp(tester, FakeServer());
 
-        // Buka Profil dan ubah nama lewat dialog.
-        await tester.tap(find.text('Profil'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Edit Profil'));
-        await tester.pumpAndSettle();
-        await tester.enterText(
-            find.byType(TextFormField).first, 'Yuda Pratama Putra');
-        await tester.pump();
-        await tester.tap(find.text('Simpan'));
-        await tester.pumpAndSettle();
-        expect(find.text('Yuda Pratama Putra'), findsOneWidget);
+    await tapTab(tester, 'Kontak');
 
-        // Rotasi ke landscape: data tetap ada.
-        tester.view.physicalSize = const Size(900, 400);
-        await tester.pumpAndSettle();
-        expect(find.text('Yuda Pratama Putra'), findsOneWidget);
+    expect(find.text('2411009@students.universitasmulia.ac.id'),
+        findsOneWidget);
+    expect(find.text('https://yuda-pratama.web.id/'), findsOneWidget);
+    expect(find.text('https://github.com/2411009-yuda'), findsOneWidget);
+  });
 
-        // Kembali ke Beranda: nama baru tampil di kartu sambutan.
-        await tester.pageBack();
-        await tester.pumpAndSettle();
-        expect(find.text('Yuda Pratama Putra'), findsOneWidget);
-      });
+  testWidgets('tombol kembali pada tab lain mengarah ke Beranda',
+      (tester) async {
+    await bukaApp(tester, FakeServer());
+    await tapTab(tester, 'Kontak');
+    expect(find.text('StudyLog'), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('StudyLog'), findsOneWidget);
+  });
+
+  testWidgets('state profil bertahan saat pindah tab dan rotasi',
+      (tester) async {
+    await bukaApp(tester, FakeServer());
+
+    await tapTab(tester, 'Profil');
+    await tester.tap(find.text('Edit Profil'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.byType(TextFormField).first, 'Yuda Pratama Putra');
+    await tester.pump();
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Yuda Pratama Putra'), findsOneWidget);
+
+    // Rotasi ke landscape: data tetap ada.
+    tester.view.physicalSize = const Size(900, 400);
+    await tester.pumpAndSettle();
+    expect(find.text('Yuda Pratama Putra'), findsOneWidget);
+
+    // Pindah ke Beranda: nama baru tampil di kartu sambutan.
+    await tapTab(tester, 'Beranda');
+    expect(find.text('Yuda Pratama Putra'), findsOneWidget);
+  });
 
   testWidgets('tombol Simpan nonaktif saat input tidak valid', (tester) async {
-    useTallScreen(tester);
-    await tester.pumpWidget(const StudyLogApp());
+    await bukaApp(tester, FakeServer());
 
-    await tester.tap(find.text('Profil'));
-    await tester.pumpAndSettle();
+    await tapTab(tester, 'Profil');
     await tester.tap(find.text('Edit Profil'));
     await tester.pumpAndSettle();
 

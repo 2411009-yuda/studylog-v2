@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app/theme.dart';
+import '../viewmodels/mata_kuliah_view_model.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/um_widgets.dart';
 
@@ -13,16 +14,22 @@ class CourseDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ProfileViewModel>();
-    final course = vm.courseById(courseId);
+    final semester = context.watch<ProfileViewModel>().student.semester;
+    final mkVm = context.watch<MataKuliahViewModel>();
+    final course = mkVm.courseByKode(courseId);
     final textTheme = Theme.of(context).textTheme;
 
     if (course == null) {
       return Scaffold(
         appBar: umAppBar('Detail Mata Kuliah'),
-        body: const Center(child: Text('Mata kuliah tidak ditemukan')),
+        body: Center(
+          child: mkVm.isLoading
+              ? const CircularProgressIndicator()
+              : const Text('Mata kuliah tidak ditemukan'),
+        ),
       );
     }
+    final jadwal = mkVm.jadwalUntuk(course.id);
 
     return Scaffold(
       appBar: umAppBar('Detail Mata Kuliah'),
@@ -52,13 +59,49 @@ class CourseDetailScreen extends StatelessWidget {
                   children: [
                     _Pill(label: 'Kode ${course.kode}'),
                     _Pill(label: '${course.sks} SKS'),
-                    _Pill(label: 'Semester ${vm.student.semester}'),
+                    _Pill(label: 'Semester $semester'),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Dosen Pengampu',
+                    style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, color: UmColors.navy)),
+                const SizedBox(height: 8),
+                Text(course.dosen, style: textTheme.bodyLarge),
+                if (jadwal.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text('Jadwal',
+                      style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold, color: UmColors.navy)),
+                  const SizedBox(height: 8),
+                  for (final j in jadwal)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.schedule,
+                              size: 20, color: UmColors.blue),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                                '${j.label} · ${j.kelas} · ${j.ruang}'),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           SectionCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

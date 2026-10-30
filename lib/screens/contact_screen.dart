@@ -18,7 +18,7 @@ class ContactScreen extends StatelessWidget {
     return Scaffold(
       appBar: umAppBar('Kontak'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
         children: [
           Text(
             'Hubungi ${student.nama}',

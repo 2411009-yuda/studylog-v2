@@ -4,36 +4,65 @@ import 'package:provider/provider.dart';
 import '../app/routes.dart';
 import '../app/theme.dart';
 import '../models/course.dart';
+import '../viewmodels/mata_kuliah_view_model.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/um_widgets.dart';
 
-/// Daftar mata kuliah semester berjalan (dipindah dari Beranda lama).
+/// Tab 3: daftar mata kuliah semester berjalan (data dari database).
 class CourseListScreen extends StatelessWidget {
   const CourseListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ProfileViewModel>();
+    final semester = context.watch<ProfileViewModel>().student.semester;
+    final vm = context.watch<MataKuliahViewModel>();
 
-    return Scaffold(
-      appBar: umAppBar('Mata Kuliah'),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'Mata Kuliah Semester ${vm.student.semester}',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold, color: UmColors.navy),
+    Widget body;
+    if (vm.isLoading && vm.courses.isEmpty) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (vm.error != null && vm.courses.isEmpty) {
+      body = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 48, color: Colors.black45),
+              const SizedBox(height: 12),
+              Text(vm.error!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton(
+                style:
+                    FilledButton.styleFrom(minimumSize: const Size(160, 44)),
+                onPressed: vm.muat,
+                child: const Text('Coba lagi'),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text('${vm.courses.length} mata kuliah · ${vm.totalSks} SKS'),
-          const SizedBox(height: 8),
-          for (final course in vm.courses) _CourseTile(course: course),
-        ],
-      ),
-    );
+        ),
+      );
+    } else {
+      body = RefreshIndicator(
+        onRefresh: vm.muat,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
+          children: [
+            Text(
+              'Mata Kuliah Semester $semester',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold, color: UmColors.navy),
+            ),
+            const SizedBox(height: 2),
+            Text('${vm.courses.length} mata kuliah · ${vm.totalSks} SKS'),
+            const SizedBox(height: 8),
+            for (final course in vm.courses) _CourseTile(course: course),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(appBar: umAppBar('Mata Kuliah'), body: body);
   }
 }
 
@@ -58,7 +87,7 @@ class _CourseTile extends StatelessWidget {
           title: Text(course.nama),
           subtitle: Text('${course.kode} · ${course.sks} SKS'),
           trailing: const Icon(Icons.chevron_right),
-          // Data dikirim seperlunya: cukup id mata kuliah.
+          // Data dikirim seperlunya: cukup kode mata kuliah.
           onTap: () => Navigator.pushNamed(
             context,
             AppRoutes.courseDetail,

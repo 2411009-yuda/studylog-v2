@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../app/theme.dart';
+import '../models/catatan.dart';
+import '../models/jadwal.dart';
 import '../utils/validators.dart';
+import '../viewmodels/catatan_view_model.dart';
+import '../viewmodels/mata_kuliah_view_model.dart';
 import '../widgets/um_widgets.dart';
 
-/// Hasil input yang ditampilkan pada Card (hanya di memori / state lokal).
-class _HasilInput {
-  const _HasilInput({
-    required this.mataKuliah,
-    required this.topik,
-    required this.judul,
-    required this.isi,
-  });
+/// Argumen route form catatan.
+/// - [awal]   : catatan yang diubah (mode ubah). Null = mode tambah.
+/// - [jadwal] : jadwal yang dipakai mengisi mata kuliah otomatis (mode tambah).
+class CatatanFormArgs {
+  const CatatanFormArgs({this.awal, this.jadwal});
 
-  final String mataKuliah;
-  final String topik;
-  final String judul;
-  final String isi;
+  final Catatan? awal;
+  final Jadwal? jadwal;
 }
 
-/// Milestone 1 (Praktikum 1): form catatan interaktif satu layar.
-///
-/// Konsep: StatefulWidget, TextEditingController, Form + GlobalKey,
-/// validator, setState, SnackBar. Belum ada penyimpanan permanen.
+/// Form tambah/ubah catatan. Mata kuliah dipilih dari database (dropdown).
 class CatatanFormScreen extends StatefulWidget {
-  const CatatanFormScreen({super.key});
+  const CatatanFormScreen({super.key, this.args});
+
+  final CatatanFormArgs? args;
 
   @override
   State<CatatanFormScreen> createState() => _CatatanFormScreenState();
@@ -32,53 +31,67 @@ class CatatanFormScreen extends StatefulWidget {
 
 class _CatatanFormScreenState extends State<CatatanFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _mataKuliah = TextEditingController();
-  final _topik = TextEditingController();
-  final _judul = TextEditingController();
-  final _isi = TextEditingController();
+  late final TextEditingController _topik;
+  late final TextEditingController _judul;
+  late final TextEditingController _isi;
+  int? _mataKuliahId;
+  bool _menyimpan = false;
 
-  _HasilInput? _hasil;
-  bool _berhasil = false;
+  Catatan? get _awal => widget.args?.awal;
+  Jadwal? get _jadwalOtomatis => _awal == null ? widget.args?.jadwal : null;
+
+  @override
+  void initState() {
+    super.initState();
+    _topik = TextEditingController(text: _awal?.topik ?? '');
+    _judul = TextEditingController(text: _awal?.judul ?? '');
+    _isi = TextEditingController(text: _awal?.isi ?? '');
+    _mataKuliahId = _awal?.mataKuliahId ?? _jadwalOtomatis?.mataKuliahId;
+  }
 
   @override
   void dispose() {
-    _mataKuliah.dispose();
     _topik.dispose();
     _judul.dispose();
     _isi.dispose();
     super.dispose();
   }
 
-  void _simpanSementara() {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _simpan() async {
+    if (!_formKey.currentState!.validate() || _menyimpan) return;
+    setState(() => _menyimpan = true);
 
-    setState(() {
-      _hasil = _HasilInput(
-        mataKuliah: _mataKuliah.text.trim(),
-        topik: _topik.text.trim(),
-        judul: _judul.text.trim(),
-        isi: _isi.text.trim(),
-      );
-      _berhasil = true;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Data ditampilkan (belum tersimpan permanen).'),
-      ),
+    final awal = _awal;
+    final data = Catatan(
+      id: awal?.id,
+      mataKuliahId: _mataKuliahId!,
+      topik: _topik.text.trim(),
+      judul: _judul.text.trim(),
+      isi: _isi.text.trim(),
+      tanggal: awal?.tanggal ?? DateTime.now(),
     );
-  }
 
-  void _bersihkan() {
-    _formKey.currentState!.reset();
-    _mataKuliah.clear();
-    _topik.clear();
-    _judul.clear();
-    _isi.clear();
-    setState(() {
-      _hasil = null;
-      _berhasil = false;
-    });
+    final vm = context.read<CatatanViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      if (awal == null) {
+        await vm.tambahCatatan(data);
+      } else {
+        await vm.ubahCatatan(data);
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text(awal == null
+            ? 'Catatan tersimpan di database.'
+            : 'Catatan diperbarui.'),
+      ));
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+    } finally {
+      if (mounted) setState(() => _menyimpan = false);
+    }
   }
 
   Widget _input(
@@ -97,80 +110,100 @@ class _CatatanFormScreenState extends State<CatatanFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final mkVm = context.watch<MataKuliahViewModel>();
+    final courses = mkVm.courses;
+    final terpilih =
+        courses.any((c) => c.id == _mataKuliahId) ? _mataKuliahId : null;
+    final jadwal = _jadwalOtomatis;
 
     return Scaffold(
-      appBar: umAppBar('Form Catatan'),
+      appBar: umAppBar(_awal == null ? 'Tambah Catatan' : 'Ubah Catatan'),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text(
-            'Praktikum 1: State & Interaksi',
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: UmColors.navy,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text('Isi catatan kuliah, lalu tekan "Tampilkan Catatan".'),
-          const SizedBox(height: 16),
           Form(
             key: _formKey,
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            // Setiap perubahan input membuat tombol kembali ke keadaan awal.
-            onChanged: () {
-              if (_berhasil) setState(() => _berhasil = false);
-            },
             child: Column(
               children: [
-                _input(_mataKuliah, 'Mata kuliah'),
+                DropdownButtonFormField<int>(
+                  value: terpilih,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Mata kuliah'),
+                  items: [
+                    for (final c in courses)
+                      DropdownMenuItem(
+                        value: c.id,
+                        child: Text(c.nama, overflow: TextOverflow.ellipsis),
+                      ),
+                  ],
+                  onChanged: courses.isEmpty
+                      ? null
+                      : (id) => setState(() => _mataKuliahId = id),
+                  validator: (id) =>
+                      id == null ? 'Mata kuliah wajib dipilih' : null,
+                ),
+                if (jadwal != null && terpilih == jadwal.mataKuliahId)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome,
+                            size: 16, color: UmColors.blue),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Terisi otomatis dari jadwal: ${jadwal.label}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: UmColors.blue),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (mkVm.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Memuat mata kuliah...'),
+                    ),
+                  ),
+                if (mkVm.error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            mkVm.error!,
+                            style: const TextStyle(color: UmColors.red),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: mkVm.muat,
+                          child: const Text('Coba lagi'),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 _input(_topik, 'Topik', validator: validateTopik),
                 const SizedBox(height: 12),
                 _input(_judul, 'Judul catatan'),
                 const SizedBox(height: 12),
-                _input(_isi, 'Isi catatan', baris: 4),
+                _input(_isi, 'Isi catatan', baris: 5),
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: _simpanSementara,
-            style: _berhasil
-                ? FilledButton.styleFrom(backgroundColor: UmColors.green)
-                : null,
-            icon: Icon(_berhasil ? Icons.check_circle : Icons.save),
-            label: Text(_berhasil ? 'Tersimpan Sementara' : 'Tampilkan Catatan'),
+            onPressed: _menyimpan ? null : _simpan,
+            icon: const Icon(Icons.save),
+            label: Text(_menyimpan ? 'Menyimpan...' : 'Simpan'),
           ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: _bersihkan,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Bersihkan'),
-          ),
-          if (_hasil != null) ...[
-            const SizedBox(height: 18),
-            SectionCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Hasil input',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: UmColors.blue,
-                        fontWeight: FontWeight.bold,
-                      )),
-                  const SizedBox(height: 8),
-                  Text(_hasil!.judul, style: textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text('${_hasil!.mataKuliah} · ${_hasil!.topik}',
-                      style: textTheme.bodySmall
-                          ?.copyWith(color: Colors.black54)),
-                  const Divider(height: 24),
-                  Text(_hasil!.isi),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

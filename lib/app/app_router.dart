@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../screens/catatan_form_screen.dart';
 import '../screens/contact_screen.dart';
 import '../screens/course_detail_screen.dart';
-import '../screens/course_list_screen.dart';
-import '../screens/home_screen.dart';
-import '../screens/profile_screen.dart';
+import '../screens/daftar_catatan_screen.dart';
+import '../screens/detail_catatan_screen.dart';
+import '../screens/main_shell.dart';
 import '../widgets/um_widgets.dart';
 import 'routes.dart';
 
@@ -13,19 +13,27 @@ import 'routes.dart';
 Route<dynamic> onGenerateRoute(RouteSettings settings) {
   switch (settings.name) {
     case AppRoutes.home:
-      return _page(settings, const HomeScreen());
-    case AppRoutes.studylogForm:
-      return _page(settings, const CatatanFormScreen());
-    case AppRoutes.profile:
-      return _page(settings, const ProfileScreen());
+      return _page(settings, const MainShell());
+    case AppRoutes.daftar:
+      return _page(settings, const DaftarCatatanScreen());
+    case AppRoutes.form:
+      final args = settings.arguments;
+      return _page(
+        settings,
+        CatatanFormScreen(args: args is CatatanFormArgs ? args : null),
+      );
+    case AppRoutes.detail:
+      final id = settings.arguments;
+      if (id is int) {
+        return _page(settings, DetailCatatanScreen(id: id));
+      }
+      return _page(settings, const _NotFoundScreen());
     case AppRoutes.contact:
       return _page(settings, const ContactScreen());
-    case AppRoutes.courses:
-      return _page(settings, const CourseListScreen());
     case AppRoutes.courseDetail:
-      final id = settings.arguments;
-      if (id is String) {
-        return _page(settings, CourseDetailScreen(courseId: id));
+      final kode = settings.arguments;
+      if (kode is String) {
+        return _page(settings, CourseDetailScreen(courseId: kode));
       }
       return _page(settings, const _NotFoundScreen());
   }

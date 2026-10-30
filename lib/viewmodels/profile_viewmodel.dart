@@ -3,15 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../models/course.dart';
 import '../models/student.dart';
-import 'course_data.dart';
 
 enum PhotoResult { changed, cancelled, failed }
 
 /// State holder untuk seluruh layar aplikasi.
 ///
-/// Layar (Beranda, Profil, Detail, Kontak) hanya MENAMPILKAN state dari sini
+/// Layar profil (Beranda, Profil, Kontak) hanya MENAMPILKAN state dari sini
 /// dan mengirim event (mis. [updateProfile]). Logika & validasi ada di sini,
 /// sehingga data tetap ada saat pindah layar maupun saat layar dirotasi.
 class ProfileViewModel extends ChangeNotifier {
@@ -37,17 +35,6 @@ class ProfileViewModel extends ChangeNotifier {
   );
 
   Student get student => _student;
-
-  List<Course> get courses => semesterCourses;
-
-  int get totalSks => semesterCourses.fold(0, (sum, c) => sum + c.sks);
-
-  Course? courseById(String kode) {
-    for (final course in semesterCourses) {
-      if (course.kode == kode) return course;
-    }
-    return null;
-  }
 
   // ---- Event dari UI ----
 

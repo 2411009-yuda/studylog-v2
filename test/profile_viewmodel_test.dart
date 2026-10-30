@@ -40,19 +40,6 @@ void main() {
       expect(notified, 1);
     });
 
-    test('courseById mengembalikan mata kuliah yang tepat atau null', () {
-      final vm = ProfileViewModel();
-      expect(vm.courseById('111000')?.nama, 'Pemrograman Aplikasi Bergerak');
-      expect(vm.courseById('tidak-ada'), isNull);
-    });
-
-    test('kurikulum semester 5: 8 mata kuliah, 23 SKS, tanpa Robotika', () {
-      final vm = ProfileViewModel();
-      expect(vm.courses.length, 8);
-      expect(vm.totalSks, 23);
-      expect(vm.courses.any((c) => c.nama == 'Robotika'), isFalse);
-    });
-
     test('resetPhoto memberi notifikasi', () {
       final vm = ProfileViewModel();
       var notified = 0;
