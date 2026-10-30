@@ -9,6 +9,7 @@ import '../utils/navigasi_catatan.dart';
 import '../utils/sinkron_aksi.dart';
 import '../utils/urutan_catatan.dart';
 import '../viewmodels/catatan_view_model.dart';
+import '../widgets/indikator_realtime.dart';
 import '../widgets/status_sinkron_banner.dart';
 import '../widgets/um_widgets.dart';
 
@@ -23,6 +24,7 @@ class DaftarCatatanScreen extends StatelessWidget {
       appBar: umAppBar(
         'Daftar Catatan',
         actions: [
+          const IndikatorRealtime(),
           IconButton(
             tooltip: 'Sinkronkan',
             icon: const Icon(Icons.sync),

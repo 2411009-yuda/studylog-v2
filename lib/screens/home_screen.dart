@@ -7,6 +7,7 @@ import '../utils/navigasi_catatan.dart';
 import '../viewmodels/catatan_view_model.dart';
 import '../viewmodels/mata_kuliah_view_model.dart';
 import '../viewmodels/profile_viewmodel.dart';
+import '../widgets/indikator_realtime.dart';
 import '../widgets/lifecycle_badge.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/status_sinkron_banner.dart';
@@ -39,7 +40,7 @@ class HomeScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: umAppBar('StudyLog'),
+      appBar: umAppBar('StudyLog', actions: const [IndikatorRealtime()]),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
         children: [

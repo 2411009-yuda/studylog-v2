@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:profil_mahasiswa/app/app.dart';
 import 'package:profil_mahasiswa/data/local_store.dart';
+import 'package:profil_mahasiswa/data/realtime_service.dart';
 import 'package:profil_mahasiswa/services/ekspor_service.dart';
 
+import 'fake_realtime.dart';
 import 'fake_server.dart';
 import 'in_memory_local_store.dart';
 
@@ -43,9 +45,19 @@ Future<void> bukaApp(
   EksporService? ekspor,
   LocalStore? local,
   Duration? interval,
+  FakeRealtime? realtime,
 }) async {
   useTallScreen(tester);
   final waktu = sekarang ?? jumatMalam;
+  // Tanpa FakeRealtime, real-time dinonaktifkan (uri null) agar tes tidak
+  // mencoba membuka WebSocket sungguhan.
+  realtime?.hubungkan(server);
+  final layananRealtime = RealtimeService(
+    uri: realtime == null ? null : Uri.parse('ws://fake/ws'),
+    penyambung: realtime?.penyambung,
+    debounce: Duration.zero,
+    jedaAwal: const Duration(milliseconds: 10),
+  );
   await tester.pumpWidget(StudyLogApp(
     apiClient: server.api,
     clock: () => waktu,
@@ -54,6 +66,7 @@ Future<void> bukaApp(
     // (menyimulasikan "tutup lalu buka aplikasi" dengan data lokal yang sama).
     localStore: local ?? InMemoryLocalStore(),
     sinkronInterval: interval,
+    realtimeService: layananRealtime,
   ));
   await tester.pumpAndSettle();
 }

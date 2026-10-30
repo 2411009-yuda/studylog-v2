@@ -11,4 +11,16 @@ class ApiConfig {
   );
 
   static const timeout = Duration(seconds: 8);
+
+  /// Alamat WebSocket real-time (port yang sama dengan API).
+  static Uri get wsUri => wsUriDari(baseUrl);
+}
+
+/// http://host:3000 -> ws://host:3000/ws ; https -> wss.
+Uri wsUriDari(String baseUrl) {
+  final uri = Uri.parse(baseUrl);
+  return uri.replace(
+    scheme: uri.scheme == 'https' ? 'wss' : 'ws',
+    path: '/ws',
+  );
 }

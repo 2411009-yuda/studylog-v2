@@ -87,6 +87,11 @@ class FakeServer {
   /// mengubah data saat pengiriman sedang berjalan).
   Future<void> Function()? onPutKlien;
 
+  /// Menyiarkan kabar perubahan seperti WebSocket server asli. Diisi oleh
+  /// FakeRealtime.hubungkan(server); null = tidak ada klien real-time.
+  void Function(Map<String, Object?> event)? onSiarkan;
+
+  int getCatatanCount = 0;
   int putKlienCount = 0;
   int deleteKlienCount = 0;
   int _urutClient = 1;
@@ -96,6 +101,39 @@ class FakeServer {
 
   late final http.Client client = MockClient(_handle);
   ApiClient get api => ApiClient(client: client, baseUrl: 'http://fake');
+
+  void _kabar(String aksi, Map<String, Object?> row) => onSiarkan?.call({
+        'tipe': 'catatan',
+        'aksi': aksi,
+        'id': row['id'],
+        'clientId': row['clientId'],
+      });
+
+  // ---- Simulasi PERANGKAT LAIN: mengubah database lalu menyiarkan kabarnya ----
+
+  Map<String, Object?> dariPerangkatLain({
+    int mataKuliahId = 5,
+    String topik = 'Dari HP lain',
+    String judul = 'Catatan dari HP lain',
+    String isi = 'Isi dari HP lain.',
+  }) {
+    final row = seedCatatan(
+        mataKuliahId: mataKuliahId, topik: topik, judul: judul, isi: isi);
+    _kabar('dibuat', row);
+    return row;
+  }
+
+  void ubahDariPerangkatLain(String clientId, {required String judul}) {
+    final index = catatan.indexWhere((c) => c['clientId'] == clientId);
+    catatan[index] = {...catatan[index], 'judul': judul};
+    _kabar('diubah', catatan[index]);
+  }
+
+  void hapusDariPerangkatLain(String clientId) {
+    final index = catatan.indexWhere((c) => c['clientId'] == clientId);
+    _kabar('dihapus', catatan[index]);
+    catatan.removeAt(index);
+  }
 
   /// Menambah catatan langsung ke "database" tanpa lewat UI.
   Map<String, Object?> seedCatatan({
@@ -148,7 +186,10 @@ class FakeServer {
     if (seg[1] != 'catatan') return _error(404, 'Endpoint tidak ditemukan');
 
     if (seg.length == 2) {
-      if (r.method == 'GET') return _json(catatan.reversed.toList());
+      if (r.method == 'GET') {
+        getCatatanCount++;
+        return _json(catatan.reversed.toList());
+      }
       if (r.method == 'POST') {
         final body = jsonDecode(r.body) as Map<String, dynamic>;
         final salah = _validasi(body);
@@ -159,7 +200,7 @@ class FakeServer {
           judul: (body['judul'] as String).trim(),
           isi: (body['isi'] as String).trim(),
         );
-        return _json(row, 201);
+        _kabar('dibuat', row); return _json(row, 201);
       }
     }
 
@@ -168,7 +209,11 @@ class FakeServer {
       final clientId = seg[3];
       if (r.method == 'DELETE') {
         deleteKlienCount++;
-        catatan.removeWhere((c) => c['clientId'] == clientId);
+        final index = catatan.indexWhere((c) => c['clientId'] == clientId);
+        if (index >= 0) {
+          _kabar('dihapus', catatan[index]);
+          catatan.removeAt(index);
+        }
         return http.Response('', 204);
       }
       if (r.method == 'PUT') {
@@ -191,7 +236,7 @@ class FakeServer {
             'judul': (body['judul'] as String).trim(),
             'isi': (body['isi'] as String).trim(),
           };
-          return _json(catatan[index]);
+          _kabar('diubah', catatan[index]); return _json(catatan[index]);
         }
         final row = seedCatatan(
           mataKuliahId: body['mataKuliahId'] as int,
@@ -201,7 +246,7 @@ class FakeServer {
           tanggal: body['tanggal'] as String?,
           clientId: clientId,
         );
-        return _json(row, 201);
+        _kabar('dibuat', row); return _json(row, 201);
       }
     }
 
@@ -224,11 +269,11 @@ class FakeServer {
           'judul': (body['judul'] as String).trim(),
           'isi': (body['isi'] as String).trim(),
         };
-        return _json(catatan[index]);
+        _kabar('diubah', catatan[index]); return _json(catatan[index]);
       }
       if (r.method == 'DELETE') {
-        catatan.removeAt(index);
-        return http.Response('', 204);
+        
+        _kabar('dihapus', catatan[index]); catatan.removeAt(index); return http.Response('', 204);
       }
     }
     return _error(404, 'Endpoint tidak ditemukan');

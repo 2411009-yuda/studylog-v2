@@ -6,7 +6,9 @@ import '../data/catatan_repository.dart';
 import '../data/local_store.dart';
 import '../data/sinkron_service.dart';
 import '../data/sqlite_local_store.dart';
+import '../config/api_config.dart';
 import '../data/mata_kuliah_repository.dart';
+import '../data/realtime_service.dart';
 import '../services/ekspor_service.dart';
 import '../viewmodels/catatan_view_model.dart';
 import '../viewmodels/mata_kuliah_view_model.dart';
@@ -25,6 +27,7 @@ class StudyLogApp extends StatelessWidget {
     this.clock,
     this.eksporService,
     this.localStore,
+    this.realtimeService,
     this.sinkronInterval = const Duration(seconds: 20),
   });
 
@@ -36,6 +39,9 @@ class StudyLogApp extends StatelessWidget {
 
   /// Penyimpanan lokal. Bawaan: SQLite di perangkat.
   final LocalStore? localStore;
+
+  /// Layanan real-time. Bawaan: WebSocket ke server API.
+  final RealtimeService? realtimeService;
 
   /// Jeda sinkronisasi berkala (null = nonaktif, dipakai pada pengujian).
   final Duration? sinkronInterval;
@@ -51,6 +57,10 @@ class StudyLogApp extends StatelessWidget {
       providers: [
         Provider<EksporService>(
           create: (_) => eksporService ?? const EksporServiceBawaan(),
+        ),
+        ChangeNotifierProvider<RealtimeService>(
+          create: (_) =>
+              realtimeService ?? RealtimeService(uri: ApiConfig.wsUri),
         ),
         ChangeNotifierProvider<ProfileViewModel>(
           create: (_) => viewModel ?? ProfileViewModel(),

@@ -44,6 +44,22 @@ hanya dipakai saat membuat; pembaruan tidak mengubahnya.
 Body POST/PUT: `{ "mataKuliahId": 5, "topik": "State", "judul": "...", "isi": "..." }`
 Kesalahan validasi → `400 { "error": "pesan" }`; tidak ditemukan → `404`.
 
+## Real-time (WebSocket)
+Server membuka WebSocket di port yang sama: `ws://localhost:3000/ws`.
+Setiap kali catatan dibuat, diubah, atau dihapus (lewat endpoint mana pun),
+server menyiarkan **pemberitahuan** ke semua aplikasi yang terhubung:
+
+```json
+{ "tipe": "catatan", "aksi": "dibuat | diubah | dihapus", "id": 12, "clientId": "…" }
+```
+Saat tersambung server mengirim `{ "tipe": "halo" }`. Pesan hanya memberi
+tahu bahwa ada perubahan; aplikasi menanggapinya dengan menarik data lewat
+`GET /api/catatan`, sehingga kabar yang terlewat (koneksi sempat putus) tidak
+membuat data tertinggal: aplikasi selalu menarik ulang saat tersambung kembali.
+Server memutus koneksi yang tidak membalas ping (detak jantung 30 detik).
+Permintaan yang ditolak (400/404) dan penghapusan yang tidak mengubah apa pun
+tidak disiarkan.
+
 ## Menghubungkan aplikasi Flutter
 - **Emulator Android:** alamat `http://10.0.2.2:3000` (bawaan aplikasi).
 - **HP fisik via USB:** `adb reverse tcp:3000 tcp:3000`, lalu
@@ -52,4 +68,4 @@ Kesalahan validasi → `400 { "error": "pesan" }`; tidak ditemukan → `404`.
   `--dart-define=API_BASE_URL=http://192.168.1.10:3000` (izinkan port 3000 di firewall).
 
 ## Pengujian
-`npm test` menjalankan unit test validator (tidak membutuhkan database).
+`npm test` menjalankan unit test validator dan hub WebSocket (tidak membutuhkan database).

@@ -45,9 +45,22 @@ const SELECT_CATATAN = `
     FROM catatan c
     JOIN mata_kuliah m ON m.id = c.mata_kuliah_id`;
 
-/** Membuat aplikasi Express. [pool] = mysql2/promise pool. */
-function createApp(pool) {
+/**
+ * Membuat aplikasi Express. [pool] = mysql2/promise pool.
+ * [siarkan] dipanggil setelah data berubah (untuk real-time WebSocket).
+ */
+function createApp(pool, { siarkan = () => {} } = {}) {
   const app = express();
+
+  // Kegagalan menyiarkan tidak boleh menggagalkan permintaan HTTP.
+  const kabarkan = (aksi, id, clientId) => {
+    try {
+      siarkan({ tipe: 'catatan', aksi, id, clientId });
+    } catch (e) {
+      console.error('Gagal menyiarkan perubahan:', e.message);
+    }
+  };
+
   app.use(cors());
   app.use(express.json({ limit: '1mb' }));
 
@@ -94,11 +107,13 @@ function createApp(pool) {
     const { error, value } = validateCatatan(req.body);
     if (error) return res.status(400).json({ error });
     try {
+      const clientId = crypto.randomUUID();
       const [result] = await pool.query(
         `INSERT INTO catatan (client_id, mata_kuliah_id, topik, judul, isi, tanggal)
          VALUES (?, ?, ?, ?, ?, COALESCE(?, NOW()))`,
-        [crypto.randomUUID(), value.mataKuliahId, value.topik, value.judul,
+        [clientId, value.mataKuliahId, value.topik, value.judul,
           value.isi, value.tanggal]);
+      kabarkan('dibuat', result.insertId, clientId);
       res.status(201).json(await findCatatan(result.insertId));
     } catch (e) {
       if (e.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -121,7 +136,9 @@ function createApp(pool) {
         `UPDATE catatan SET mata_kuliah_id = ?, topik = ?, judul = ?, isi = ?
           WHERE id = ?`,
         [value.mataKuliahId, value.topik, value.judul, value.isi, id]);
-      res.json(await findCatatan(id));
+      const diubah = await findCatatan(id);
+      kabarkan('diubah', id, diubah.clientId);
+      res.json(diubah);
     } catch (e) {
       if (e.code === 'ER_NO_REFERENCED_ROW_2') {
         return res.status(400).json({ error: 'Mata kuliah tidak ditemukan' });
@@ -133,10 +150,12 @@ function createApp(pool) {
   app.delete('/api/catatan/:id', wrap(async (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID tidak valid' });
+    const ada = await findCatatan(id);
     const [result] = await pool.query('DELETE FROM catatan WHERE id = ?', [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Catatan tidak ditemukan' });
     }
+    kabarkan('dihapus', id, ada ? ada.clientId : null);
     res.status(204).end();
   }));
 
@@ -178,6 +197,7 @@ function createApp(pool) {
         if (e.code !== 'ER_DUP_ENTRY') throw e;
         hasil = await simpan();
       }
+      kabarkan(hasil.status === 201 ? 'dibuat' : 'diubah', hasil.id, clientId);
       res.status(hasil.status).json(await findCatatan(hasil.id));
     } catch (e) {
       if (e.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -191,7 +211,12 @@ function createApp(pool) {
   app.delete('/api/catatan/klien/:clientId', wrap(async (req, res) => {
     const clientId = String(req.params.clientId).toLowerCase();
     if (!isUuid(clientId)) return res.status(400).json({ error: 'clientId tidak valid' });
-    await pool.query('DELETE FROM catatan WHERE client_id = ?', [clientId]);
+    const [ada] = await pool.query(
+      'SELECT id FROM catatan WHERE client_id = ?', [clientId]);
+    const [result] = await pool.query(
+      'DELETE FROM catatan WHERE client_id = ?', [clientId]);
+    // Menghapus yang sudah tidak ada bukan perubahan: tidak perlu disiarkan.
+    if (result.affectedRows > 0) kabarkan('dihapus', ada[0] ? ada[0].id : null, clientId);
     res.status(204).end();
   }));
 
