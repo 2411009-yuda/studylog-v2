@@ -11,7 +11,7 @@ dengan pengembangan mandiri di bagian [Fitur pengembangan](#fitur-pengembangan-p
 
 | |                                               |
 |---|-----------------------------------------------|
-| Nama / NIM | Yuda Pratama / 2411009                  |
+| Nama / NIM | Yuda Pratama / 2411009 Wisnu Wardhana / 2411037  Khoirul ikwan / 2411020           |
 | Kelas | IFB5J                                         |
 | |                                              |
 |---|----------------------------------------------|
