@@ -7,6 +7,7 @@ class AppRoutes {
   static const home = '/';
 
   // StudyLog
+  static const tentang = '/tentang';
   static const daftar = '/catatan';
   static const detail = '/catatan/detail';
   static const form = '/catatan/form';

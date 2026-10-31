@@ -128,6 +128,18 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          SectionCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              leading: const Icon(Icons.info_outline, color: UmColors.blue),
+              title: const Text('Tentang Aplikasi'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, AppRoutes.tentang),
+            ),
+          ),
+          const SizedBox(height: 16),
           const LifecycleBadge(),
         ],
       ),

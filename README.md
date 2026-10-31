@@ -9,16 +9,12 @@ Proyek PjBL mata kuliah **Pemrograman Aplikasi Bergerak** — Universitas Mulia,
 Program Studi Informatika. Mengikuti *Workbook Praktikum 1: StudyLog* (M1–M3)
 dengan pengembangan mandiri di bagian [Fitur pengembangan](#fitur-pengembangan-pjbl).
 
-| |                                               |
-|---|-----------------------------------------------|
-| Nama / NIM | Yuda Pratama / 2411009 Wisnu Wardhana / 2411037  Khoirul ikwan / 2411020           |
-| Kelas | IFB5J                                         |
-| |                                              |
-|---|----------------------------------------------|
-| Nama / NIM | Yuda Pratama / 2411009                  |
-| Kelas | IFB5J                                        |
-| Repository | `https://github.com/2411009-yuda/studylog-v2` |
-| Perangkat uji | `Poco X3 GT`                                 |
+| |                                                                             |
+|---|-----------------------------------------------------------------------------|
+| Nama / NIM | Yuda Pratama 2411009, Wisnu Wardhana 2411037 / Khoirul Ikwan 2411020        |
+| Kelas | IFB5J                                                                       |
+| Repository | `https://github.com/2411009-yuda/studylog-v2`                                         |
+| Perangkat uji | `Poco X3 GT` |
 
 > Fitur **Profil Mahasiswa** dari proyek sebelumnya tetap ada sebagai menu
 > lain (tab Profil, Mata Kuliah, dan Kontak).
@@ -62,6 +58,7 @@ dengan pengembangan mandiri di bagian [Fitur pengembangan](#fitur-pengembangan-p
 - **Real-time (WebSocket)**: catatan yang dibuat, diubah, atau dihapus di perangkat lain muncul tanpa menekan apa pun. Sambung ulang otomatis, dengan polling cadangan bila WebSocket tidak tersedia.
 - **Cache mata kuliah dan jadwal** agar dropdown dan tombol + tetap berfungsi saat offline.
 - **Kartu jadwal di Beranda**: kelas yang sedang berlangsung atau berikutnya.
+- **Halaman Tentang Aplikasi** (tugas pengayaan M2): dibuka dari Beranda dengan `Navigator.push`; memuat deskripsi, fitur, teknologi, versi, dan data pengembang yang mengikuti data profil.
 
 ### Menu lain (proyek profil mahasiswa)
 Bottom bar: **Beranda · Profil · [+] · Mata Kuliah · Kontak**. Profil dapat diedit (nama, program studi, foto).
@@ -274,6 +271,7 @@ cd studylog_api && npm test    # validator dan hub WebSocket
 | Alur layar | `catatan_flow_test.dart`, `offline_flow_test.dart`, `navigation_test.dart` | CRUD T1–T7, offline, bottom bar, back stack |
 | Urutkan & ekspor | `urutan_ekspor_test.dart`, `urutan_ekspor_flow_test.dart` | Urutan, format teks, salin, bagikan |
 | Real-time | `realtime_service_test.dart`, `realtime_flow_test.dart` | Sambung ulang, debounce, polling cadangan, lifecycle |
+| Tentang Aplikasi | `tentang_test.dart` | Navigasi dari Beranda dan kembali, isi halaman, data pengembang mengikuti profil, versi sama dengan `pubspec.yaml` |
 
 Server MySQL dan SQLite diganti tiruan di tes (`fake_server.dart`, `in_memory_local_store.dart`),
 sehingga **tes otomatis tidak membuktikan** lapisan SQLite asli dan WebSocket asli. Keduanya
@@ -360,7 +358,7 @@ Isi kolom hasil setelah mengujinya di HP/emulator.
 | Milestone | Isi | Pesan commit |
 |---|---|---|
 | M1 | Form interaktif, validasi, `setState`, SnackBar | `M1: formulir interaktif` |
-| M2 | Multi-layar, Navigator, `ChangeNotifier`/Provider (data di memori), bottom bar | `M2: navigasi dan state` |
+| M2 | Multi-layar, Navigator, `ChangeNotifier`/Provider (data di memori), bottom bar, halaman Tentang Aplikasi | `M2: navigasi dan state` |
 | M3 | MySQL via API Node.js, SQLite lokal, antrian offline, mata kuliah dan jadwal dari database, tombol +, urutkan, ekspor teks, real-time WebSocket | `M3: ...` |
 
 ---

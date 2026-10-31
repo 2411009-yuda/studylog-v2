@@ -6,6 +6,7 @@ import '../screens/course_detail_screen.dart';
 import '../screens/daftar_catatan_screen.dart';
 import '../screens/detail_catatan_screen.dart';
 import '../screens/main_shell.dart';
+import '../screens/tentang_screen.dart';
 import '../widgets/um_widgets.dart';
 import 'routes.dart';
 
@@ -14,6 +15,8 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
   switch (settings.name) {
     case AppRoutes.home:
       return _page(settings, const MainShell());
+    case AppRoutes.tentang:
+      return _page(settings, const TentangScreen());
     case AppRoutes.daftar:
       return _page(settings, const DaftarCatatanScreen());
     case AppRoutes.form:
