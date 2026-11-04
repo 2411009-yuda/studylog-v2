@@ -663,7 +663,7 @@ Beberapa batasan implementasi yang tercantum dalam laporan:
 
 1. **Belum menggunakan autentikasi.** Semua perangkat yang mengakses server yang sama berbagi kumpulan catatan.
 2. **Konflik data.** Jika satu catatan diubah dari dua perangkat, implementasi menggunakan pendekatan *last write wins*.
-3. **Penggunaan pertama tanpa internet.** Data mata kuliah belum tersedia apabila cache lokal belum pernah terisi.
+3. **Penggunaan pertama kali wajib terkoneksi.** Data mata kuliah belum tersedia apabila cache lokal belum pernah terisi.
 4. **Penghapusan aplikasi.** Perubahan yang belum tersinkron dapat hilang ketika aplikasi dihapus dari perangkat.
 5. **Pengurutan.** Pilihan pengurutan kembali ke Terbaru ketika aplikasi dibuka ulang.
 6. **Keamanan server.** Konfigurasi demonstrasi menggunakan HTTP/WS tanpa TLS dan API belum memiliki autentikasi.
@@ -673,12 +673,12 @@ Beberapa batasan implementasi yang tercantum dalam laporan:
 
 Pengembangan selanjutnya dapat mencakup:
 
-- Menambahkan autentikasi dan otorisasi agar data setiap pengguna terpisah.
-- Mengaktifkan HTTPS/WSS dan membatasi akses API sebelum digunakan pada jaringan publik.
-- Mengembangkan strategi resolusi konflik data lintas perangkat.
-- Menerapkan migrasi skema SQLite ketika struktur tabel berubah.
-- Menyimpan preferensi pengurutan secara persisten.
-- Melengkapi pengujian integrasi pada perangkat Android menggunakan SQLite dan server sesungguhnya.
+- Membantu menambahkan autentikasi dan otorisasi agar data setiap pengguna tetap terpisah.
+- Turut mengaktifkan HTTPS/WSS serta membatasi akses API sebelum digunakan pada jaringan publik.
+- Membantu mengembangkan strategi resolusi konflik data antarperangkat.
+- Menerapkan proses migrasi skema SQLite ketika terjadi perubahan struktur tabel.
+- Menambahkan penyimpanan preferensi pengurutan agar tetap tersimpan secara persisten.
+- Membantu melengkapi pengujian integrasi pada perangkat Android menggunakan SQLite dan server sebenarnya.
 
 ---
 
