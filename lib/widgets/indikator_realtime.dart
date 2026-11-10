@@ -10,6 +10,7 @@ class IndikatorRealtime extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = context.watch<RealtimeService>().status;
+    debugPrint('[IndikatorRealtime] Status: $status');
 
     final (IconData ikon, String pesan, double opasitas) = switch (status) {
       StatusRealtime.tersambung => (Icons.sensors, 'Real-time aktif', 1.0),

@@ -141,27 +141,27 @@ class TentangScreen extends StatelessWidget {
           const SizedBox(height: 12),
 
           // ---- Pengembang (mengikuti data profil) ----
-          // SectionCard(
-          //   child: Column(
-          //     crossAxisAlignment: CrossAxisAlignment.start,
-          //     children: [
-          //       judul('Pengembang'),
-          //       baris('Nama', student.nama),
-          //       baris('NIM', student.nim),
-          //       baris('Program studi', student.programStudi),
-          //       baris('Institusi', AppInfo.institusi),
-          //       baris('Mata kuliah', AppInfo.mataKuliah),
-          //     ],
-          //   ),
-          // ),
-          // const SizedBox(height: 16),
-          // Center(
-          //   child: Text(
-          //     '© ${AppInfo.tahun} ${AppInfo.institusi}',
-          //     style: textTheme.bodySmall?.copyWith(color: Colors.black54),
-          //   ),
-          // ),
-          // const SizedBox(height: 8),
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                judul('Pengembang'),
+                baris('Nama', student.nama),
+                baris('NIM', student.nim),
+                baris('Program studi', student.programStudi),
+                baris('Institusi', AppInfo.institusi),
+                baris('Mata kuliah', AppInfo.mataKuliah),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              '© ${AppInfo.tahun} ${AppInfo.institusi}',
+              style: textTheme.bodySmall?.copyWith(color: Colors.black54),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );

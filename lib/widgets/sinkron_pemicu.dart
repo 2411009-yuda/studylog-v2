@@ -64,11 +64,17 @@ class _SinkronPemicuState extends State<SinkronPemicu>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!mounted) return;
+
+    debugPrint('[SinkronPemicu] Lifecycle: $state');
+    debugPrint('[SinkronPemicu] Status sebelum: ${_realtime?.status}');
+
     if (state == AppLifecycleState.paused) {
-      // Android mematikan soket di background; lepas dengan rapi.
-      unawaited(_realtime?.berhenti());
+      unawaited(_realtime?.berhenti().then((_) {
+        debugPrint('[SinkronPemicu] Status setelah berhenti: ${_realtime?.status}');
+      }));
     } else if (state == AppLifecycleState.resumed) {
       _realtime?.mulai();
+      debugPrint('[SinkronPemicu] Status setelah mulai: ${_realtime?.status}');
       unawaited(sinkronSemua(context));
     }
   }

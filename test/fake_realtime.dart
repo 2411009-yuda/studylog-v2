@@ -56,7 +56,12 @@ class FakeRealtime {
   void kirimMentah(Object? data) => _terbuka?.controller.add(data);
 
   /// Server menutup sambungan (mis. restart, jaringan putus).
-  void putus() => _terbuka?.controller.close();
+  Future<void> putus() async {
+    final koneksi = _terbuka;
+    if (koneksi == null) return;
+    koneksi.tertutup = true;
+    if (!koneksi.controller.isClosed) await koneksi.controller.close();
+  }
 
   /// Setiap perubahan pada [server] disiarkan lewat sambungan ini.
   void hubungkan(FakeServer server) => server.onSiarkan = kirim;

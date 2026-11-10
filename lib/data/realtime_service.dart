@@ -111,23 +111,52 @@ class RealtimeService extends ChangeNotifier {
   }
 
   Future<void> berhenti() async {
-    if (!_aktif) return;
+    debugPrint('[RealtimeService] berhenti() dipanggil');
+
+    if (!_aktif) {
+      debugPrint('[RealtimeService] Service memang tidak aktif');
+      return;
+    }
+
     _aktif = false;
     _generasi++;
+
     _timerUlang?.cancel();
     _timerDebounce?.cancel();
-    await _lepas();
+
+    debugPrint('[RealtimeService] Mengubah status menjadi terputus');
     _ubah(StatusRealtime.terputus);
+
+    debugPrint('[RealtimeService] Memulai _lepas()');
+    await _lepas();
+
+    debugPrint('[RealtimeService] _lepas() selesai');
   }
 
   Future<void> _lepas() async {
     final langganan = _langganan;
     final koneksi = _koneksi;
+
+    // Lepaskan referensi terlebih dahulu.
     _langganan = null;
     _koneksi = null;
-    await langganan?.cancel();
+
+    // Mulai penutupan koneksi tanpa langsung menunggunya.
+    Future<void>? prosesTutup;
+
     try {
-      await koneksi?.tutup();
+      prosesTutup = koneksi?.tutup();
+    } catch (_) {}
+
+    // Batalkan subscription agar StreamController.close()
+    // dapat menyelesaikan prosesnya.
+    try {
+      await langganan?.cancel();
+    } catch (_) {}
+
+    // Tunggu proses penutupan koneksi selesai.
+    try {
+      await prosesTutup;
     } catch (_) {}
   }
 
@@ -201,8 +230,18 @@ class RealtimeService extends ChangeNotifier {
   }
 
   void _ubah(StatusRealtime baru) {
-    if (_dibuang || _status == baru) return;
+    debugPrint(
+      '[RealtimeService] _ubah dipanggil: $_status -> $baru',
+    );
+
+    if (_dibuang || _status == baru) {
+      debugPrint('[RealtimeService] Perubahan status dilewati');
+      return;
+    }
+
     _status = baru;
+
+    debugPrint('[RealtimeService] notifyListeners() dipanggil');
     notifyListeners();
   }
 

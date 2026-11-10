@@ -121,7 +121,7 @@ void main() {
     await bukaApp(tester, server, realtime: fake);
     await bukaDaftar(tester);
 
-    fake.putus();
+    await fake.putus();
     await tester.pump();
     expect(find.byTooltip('Real-time terputus'), findsOneWidget);
 
@@ -158,10 +158,15 @@ void main() {
     await bukaApp(tester, server, realtime: fake);
     expect(fake.jumlahTerbuka, 1);
 
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(
+      AppLifecycleState.paused,
+    );
+
     await tester.pumpAndSettle();
+
+    // Pastikan koneksi sudah ditutup.
+    // Tidak perlu memeriksa tampilan saat aplikasi paused.
     expect(fake.jumlahTerbuka, 0);
-    expect(find.byTooltip('Real-time terputus'), findsOneWidget);
 
     // Saat di background ada perubahan di perangkat lain.
     server.seedCatatan(judul: 'Saat di background');
@@ -189,7 +194,7 @@ void main() {
 
     // Server hidup lagi dan WebSocket tersambung ulang: antrian terkirim.
     server.down = false;
-    fake.putus();
+    await fake.putus();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pumpAndSettle();

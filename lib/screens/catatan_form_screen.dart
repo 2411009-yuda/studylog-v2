@@ -97,13 +97,10 @@ class _CatatanFormScreenState extends State<CatatanFormScreen> {
         await vm.ubahCatatan(data);
       }
       if (!mounted) return;
-      final offline = vm.status == StatusSinkron.offline;
       messenger.showSnackBar(SnackBar(
-        content: Text(offline
-            ? 'Disimpan offline. Akan disinkronkan saat terhubung.'
-            : awal == null
-                ? 'Catatan tersimpan.'
-                : 'Catatan diperbarui.'),
+        content: Text(awal == null
+            ? 'Catatan disimpan di perangkat. Sinkronisasi berjalan otomatis.'
+            : 'Perubahan disimpan di perangkat. Sinkronisasi berjalan otomatis.'),
       ));
       Navigator.pop(context, true);
     } catch (e) {
@@ -147,7 +144,7 @@ class _CatatanFormScreenState extends State<CatatanFormScreen> {
             child: Column(
               children: [
                 DropdownButtonFormField<int>(
-                  value: terpilih,
+                  initialValue: terpilih,
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Mata kuliah'),
                   items: [

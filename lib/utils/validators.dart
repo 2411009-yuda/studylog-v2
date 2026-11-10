@@ -1,5 +1,5 @@
-/// Fungsi validasi murni (tanpa dependensi UI) agar mudah diuji.
-/// Dipakai oleh TextFormField.validator pada form catatan StudyLog.
+// Fungsi validasi murni (tanpa dependensi UI) agar mudah diuji.
+// Dipakai oleh TextFormField.validator pada form catatan StudyLog.
 
 String? validateWajibIsi(String? nilai, String label) {
   if (nilai == null || nilai.trim().isEmpty) return '$label wajib diisi';

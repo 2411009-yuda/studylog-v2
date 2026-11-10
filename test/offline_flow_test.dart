@@ -6,7 +6,7 @@ import 'in_memory_local_store.dart';
 import 'test_helpers.dart';
 
 const _bannerOffline = 'Offline · menampilkan data tersimpan di perangkat';
-const _simpanOffline = 'Disimpan offline. Akan disinkronkan saat terhubung.';
+const _simpanOffline = 'Catatan disimpan di perangkat. Sinkronisasi berjalan otomatis.';
 
 /// Menyimulasikan pengguna yang sudah pernah memakai aplikasi saat online
 /// (cache mata kuliah & jadwal terisi), lalu membuka aplikasi TANPA koneksi.
