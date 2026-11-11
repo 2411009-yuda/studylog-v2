@@ -57,8 +57,7 @@ void main() {
       await tester.tap(find.text('Tambah'));
       await tester.pumpAndSettle();
       await isiForm(tester, judul: 'Aaa');
-      await tester.tap(find.text('Simpan'));
-      await tester.pumpAndSettle();
+      await simpanTambah(tester); // "Tidak": kembali ke Daftar
 
       expect(find.text('Urutan: Judul A–Z'), findsOneWidget);
       expect(y(tester, 'Aaa'), lessThan(y(tester, 'Awan')));

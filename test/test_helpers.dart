@@ -99,3 +99,15 @@ Future<void> isiForm(
   await tester.enterText(fields.at(2), isi);
   await tester.pump();
 }
+
+/// Menekan Simpan pada form TAMBAH catatan, lalu menjawab pop-up
+/// "Catatan sudah dibuat". [lagi] true = "Buat lagi", false = "Tidak"
+/// (menuju Daftar Catatan).
+Future<void> simpanTambah(WidgetTester tester, {bool lagi = false}) async {
+  await tester.tap(find.text('Simpan'));
+  await tester.pumpAndSettle();
+  expect(find.text('Catatan sudah dibuat'), findsOneWidget);
+  expect(find.text('Apakah ingin membuat catatan lagi?'), findsOneWidget);
+  await tester.tap(find.text(lagi ? 'Buat lagi' : 'Tidak'));
+  await tester.pumpAndSettle();
+}

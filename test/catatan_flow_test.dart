@@ -67,7 +67,7 @@ void main() {
       expect(find.textContaining('Terisi otomatis'), findsNothing);
 
       await isiForm(tester);
-      await simpanForm(tester);
+      await simpanTambah(tester);
       expect(server.catatan.single['mataKuliahNama'], 'Kriptografi');
     });
   });
@@ -102,16 +102,19 @@ void main() {
       await bukaApp(tester, server);
       await tapPlus(tester);
       await isiForm(tester);
-      await simpanForm(tester);
+      await simpanTambah(tester); // pop-up -> "Tidak"
 
-      // Form tertutup, kembali ke Beranda dengan jumlah terbaru.
-      expect(find.text('StudyLog'), findsOneWidget);
-      expect(find.text('1 catatan tersimpan.'), findsOneWidget);
+      // Form tertutup, langsung menuju Daftar Catatan.
+      expect(find.text('Daftar Catatan'), findsOneWidget);
       expect(server.catatan.single['judul'], 'Dasar setState');
-
-      await bukaDaftar(tester);
       expect(find.text('Dasar setState'), findsOneWidget);
       expect(find.text('Total: 1 catatan'), findsOneWidget);
+
+      // Kembali dari Daftar: Beranda dengan jumlah terbaru.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('StudyLog'), findsOneWidget);
+      expect(find.text('1 catatan tersimpan.'), findsOneWidget);
     });
 
     testWidgets('T2 Read + back stack: Detail -> Daftar -> Beranda',
@@ -203,7 +206,7 @@ void main() {
       await bukaApp(tester, server, local: local);
       await tapPlus(tester);
       await isiForm(tester);
-      await simpanForm(tester);
+      await simpanTambah(tester);
 
       // "Tutup" aplikasi: bongkar widget tree. SQLite lokal dan MySQL tetap ada.
       await tester.pumpWidget(const SizedBox());
@@ -232,6 +235,70 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Dasar setState'), findsOneWidget);
+  });
+
+  group('Pop-up setelah catatan dibuat', () {
+    testWidgets('"Buat lagi": form kosong, mata kuliah tetap, bisa simpan lagi',
+        (tester) async {
+      final server = FakeServer();
+      await bukaApp(tester, server);
+      await tapPlus(tester);
+      await isiForm(tester);
+      await simpanTambah(tester, lagi: true);
+
+      // Tetap di form, field dikosongkan tanpa pesan error, mata kuliah tetap.
+      expect(find.text('Tambah Catatan'), findsOneWidget);
+      expect(find.text('Dasar setState'), findsNothing);
+      expect(find.text('Topik wajib diisi'), findsNothing);
+      expect(
+        tester.widget<DropdownButton<int>>(find.byType(DropdownButton<int>)).value,
+        5,
+      );
+      expect(server.catatan, hasLength(1));
+
+      await isiForm(tester, judul: 'Catatan kedua');
+      await simpanTambah(tester);
+
+      expect(find.text('Daftar Catatan'), findsOneWidget);
+      expect(find.text('Total: 2 catatan'), findsOneWidget);
+      expect(server.catatan, hasLength(2));
+    });
+
+    testWidgets('"Tidak" dari Daftar: kembali ke Daftar, tidak menumpuk',
+        (tester) async {
+      final server = FakeServer();
+      await bukaApp(tester, server);
+      await bukaDaftar(tester);
+
+      await tester.tap(find.text('Tambah'));
+      await tester.pumpAndSettle();
+      await isiForm(tester);
+      await simpanTambah(tester);
+
+      expect(find.text('Daftar Catatan'), findsOneWidget);
+      expect(find.text('Total: 1 catatan'), findsOneWidget);
+
+      // Hanya satu Daftar di tumpukan: sekali kembali sudah di Beranda.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('StudyLog'), findsOneWidget);
+    });
+
+    testWidgets('mengubah catatan tidak memunculkan pop-up', (tester) async {
+      final server = FakeServer()..seedCatatan();
+      await bukaApp(tester, server);
+      await bukaDaftar(tester);
+      await tester.tap(find.text('Dasar setState'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ubah'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(1), 'Judul diubah');
+      await tester.pump();
+      await simpanForm(tester);
+
+      expect(find.text('Catatan sudah dibuat'), findsNothing);
+      expect(find.text('Detail Catatan'), findsOneWidget);
+    });
   });
 
   group('validators', () {

@@ -114,7 +114,7 @@ void main() {
       await tunggu(30);
       expect(tersambung, 1);
 
-      await fake.putus();
+      fake.putus();
       await tunggu(10);
       expect(svc.status, isNot(StatusRealtime.tersambung));
 

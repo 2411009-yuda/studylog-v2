@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../app/routes.dart';
 import '../app/theme.dart';
 import '../models/catatan.dart';
 import '../models/jadwal.dart';
@@ -97,18 +98,73 @@ class _CatatanFormScreenState extends State<CatatanFormScreen> {
         await vm.ubahCatatan(data);
       }
       if (!mounted) return;
+      final offline = vm.status == StatusSinkron.offline;
       messenger.showSnackBar(SnackBar(
-        content: Text(awal == null
-            ? 'Catatan disimpan di perangkat. Sinkronisasi berjalan otomatis.'
-            : 'Perubahan disimpan di perangkat. Sinkronisasi berjalan otomatis.'),
+        content: Text(offline
+            ? 'Disimpan offline. Akan disinkronkan saat terhubung.'
+            : awal == null
+                ? 'Catatan tersimpan.'
+                : 'Catatan diperbarui.'),
       ));
-      Navigator.pop(context, true);
+      if (awal != null) {
+        // Mode ubah: kembali ke layar sebelumnya (Detail).
+        Navigator.pop(context, true);
+        return;
+      }
+      // Mode tambah: tanya apakah ingin membuat catatan lagi.
+      final lagi = await _tanyaBuatLagi();
+      if (!mounted) return;
+      if (lagi) {
+        // reset() mengosongkan field & error validasi; mata kuliah tetap.
+        final mataKuliah = _mataKuliahId;
+        _formKey.currentState?.reset();
+        setState(() => _mataKuliahId = mataKuliah);
+      } else {
+        _keDaftarCatatan();
+      }
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
     } finally {
       if (mounted) setState(() => _menyimpan = false);
     }
+  }
+
+  Future<bool> _tanyaBuatLagi() async {
+    final lagi = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Catatan sudah dibuat'),
+        content: const Text('Apakah ingin membuat catatan lagi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Tidak'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Buat lagi'),
+          ),
+        ],
+      ),
+    );
+    return lagi ?? false;
+  }
+
+  /// Menutup form lalu menampilkan Daftar Catatan. Jika form dibuka dari
+  /// Daftar, cukup kembali ke Daftar (tidak menumpuk dua Daftar).
+  void _keDaftarCatatan() {
+    final nav = Navigator.of(context);
+    var sudahDiDaftar = false;
+    nav.popUntil((rute) {
+      if (rute.settings.name == AppRoutes.daftar) {
+        sudahDiDaftar = true;
+        return true;
+      }
+      return rute.isFirst;
+    });
+    if (!sudahDiDaftar) nav.pushNamed(AppRoutes.daftar);
   }
 
   Widget _input(
@@ -144,6 +200,9 @@ class _CatatanFormScreenState extends State<CatatanFormScreen> {
             child: Column(
               children: [
                 DropdownButtonFormField<int>(
+                  // key: field dibuat ulang saat pilihan berubah (initialValue
+                  // hanya dibaca saat field dibuat).
+                  key: ValueKey('mk-$terpilih'),
                   initialValue: terpilih,
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Mata kuliah'),
