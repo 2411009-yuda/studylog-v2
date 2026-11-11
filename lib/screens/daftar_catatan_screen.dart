@@ -37,141 +37,230 @@ class DaftarCatatanScreen extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: StatusSinkronBanner(),
         ),
+        // Kolom cari hanya muncul jika sudah ada catatan.
+        Selector<CatatanViewModel, bool>(
+          selector: (_, vm) => vm.catatan.isNotEmpty,
+          builder: (_, adaCatatan, _) =>
+          adaCatatan ? const _KolomCari() : const SizedBox.shrink(),
+        ),
         Expanded(child: Consumer<CatatanViewModel>(builder: (context, vm, _) {
-        if (vm.isLoading && vm.catatan.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (vm.error != null && vm.catatan.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.cloud_off, size: 48, color: Colors.black45),
-                  const SizedBox(height: 12),
-                  Text(vm.error!, textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                        minimumSize: const Size(160, 44)),
-                    onPressed: vm.muatCatatan,
-                    child: const Text('Coba lagi'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        if (vm.catatan.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'Belum ada catatan. Tekan Tambah untuk membuat catatan.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: () => sinkronSemua(context),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 0, 0, 8),
-                child: Row(
+          if (vm.isLoading && vm.catatan.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (vm.error != null && vm.catatan.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Total: ${vm.catatan.length} catatan',
-                            style:
-                                Theme.of(context).textTheme.labelLarge?.copyWith(
-                                      color: UmColors.navy,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                          ),
-                          Text(
-                            'Urutan: ${vm.urutan.label}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<UrutanCatatan>(
-                      tooltip: 'Urutkan',
-                      icon: const Icon(Icons.sort),
-                      initialValue: vm.urutan,
-                      onSelected: vm.ubahUrutan,
-                      itemBuilder: (_) => [
-                        for (final u in UrutanCatatan.values)
-                          PopupMenuItem(value: u, child: Text(u.label)),
-                      ],
-                    ),
-                    PopupMenuButton<_AksiEkspor>(
-                      tooltip: 'Ekspor',
-                      icon: const Icon(Icons.ios_share),
-                      onSelected: (aksi) => _ekspor(context, vm, aksi),
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                          value: _AksiEkspor.salin,
-                          child: Text('Salin semua'),
-                        ),
-                        PopupMenuItem(
-                          value: _AksiEkspor.bagikan,
-                          child: Text('Bagikan semua'),
-                        ),
-                      ],
+                    const Icon(Icons.cloud_off, size: 48, color: Colors.black45),
+                    const SizedBox(height: 12),
+                    Text(vm.error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                          minimumSize: const Size(160, 44)),
+                      onPressed: vm.muatCatatan,
+                      child: const Text('Coba lagi'),
                     ),
                   ],
                 ),
               ),
-              for (final catatan in vm.catatan)
+            );
+          }
+          if (vm.catatan.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Belum ada catatan. Tekan Tambah untuk membuat catatan.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+          final tampil = vm.hasilCari;
+          return RefreshIndicator(
+            onRefresh: () => sinkronSemua(context),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
+              children: [
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: SectionCard(
-                    padding: EdgeInsets.zero,
-                    child: ListTile(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      title: Text(catatan.judul),
-                      subtitle: Text(
-                          '${catatan.mataKuliahNama} · ${catatan.topik}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (catatan.menunggu)
-                            const Tooltip(
-                              message: 'Menunggu sinkron',
-                              child: Icon(Icons.cloud_upload_outlined,
-                                  size: 20, color: UmColors.blue),
+                  padding: const EdgeInsets.fromLTRB(4, 0, 0, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              vm.sedangMencari
+                                  ? 'Ditemukan: ${tampil.length} dari '
+                                  '${vm.catatan.length} catatan'
+                                  : 'Total: ${vm.catatan.length} catatan',
+                              style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: UmColors.navy,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          const Icon(Icons.chevron_right),
+                            Text(
+                              'Urutan: ${vm.urutan.label}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<UrutanCatatan>(
+                        tooltip: 'Urutkan',
+                        icon: const Icon(Icons.sort),
+                        initialValue: vm.urutan,
+                        onSelected: vm.ubahUrutan,
+                        itemBuilder: (_) => [
+                          for (final u in UrutanCatatan.values)
+                            PopupMenuItem(value: u, child: Text(u.label)),
                         ],
                       ),
-                      // Data dikirim seperlunya: cukup id catatan.
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.detail,
-                        arguments: catatan.id,
+                      PopupMenuButton<_AksiEkspor>(
+                        tooltip: 'Ekspor',
+                        icon: const Icon(Icons.ios_share),
+                        onSelected: (aksi) => _ekspor(context, vm, aksi),
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: _AksiEkspor.salin,
+                            child: Text('Salin semua'),
+                          ),
+                          PopupMenuItem(
+                            value: _AksiEkspor.bagikan,
+                            child: Text('Bagikan semua'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (vm.sedangMencari && tampil.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.search_off,
+                            size: 48, color: Colors.black45),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tidak ada catatan yang cocok dengan '
+                              '"${vm.kueri.trim()}".',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => vm.ubahKueri(''),
+                          child: const Text('Hapus pencarian'),
+                        ),
+                      ],
+                    ),
+                  ),
+                for (final catatan in tampil)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: SectionCard(
+                      padding: EdgeInsets.zero,
+                      child: ListTile(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        title: Text(catatan.judul),
+                        subtitle: Text(
+                            '${catatan.mataKuliahNama} · ${catatan.topik}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (catatan.menunggu)
+                              const Tooltip(
+                                message: 'Menunggu sinkron',
+                                child: Icon(Icons.cloud_upload_outlined,
+                                    size: 20, color: UmColors.blue),
+                              ),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
+                        // Data dikirim seperlunya: cukup id catatan.
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.detail,
+                          arguments: catatan.id,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-        );
-      })),
+              ],
+            ),
+          );
+        })),
       ]),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => bukaFormCatatanBaru(context),
         icon: const Icon(Icons.add),
         label: const Text('Tambah'),
+      ),
+    );
+  }
+}
+
+/// Kolom pencarian. Controller dimiliki widget ini; nilai awalnya diambil dari
+/// ViewModel agar kata kunci tidak hilang saat widget dibangun ulang.
+class _KolomCari extends StatefulWidget {
+  const _KolomCari();
+
+  @override
+  State<_KolomCari> createState() => _KolomCariState();
+}
+
+class _KolomCariState extends State<_KolomCari> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: context.read<CatatanViewModel>().kueri,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.read<CatatanViewModel>();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      child: TextField(
+        controller: _controller,
+        textInputAction: TextInputAction.search,
+        onChanged: vm.ubahKueri,
+        decoration: InputDecoration(
+          hintText: 'Cari judul, topik, isi, atau mata kuliah',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _controller,
+            builder: (_, value, _) => value.text.isEmpty
+                ? const SizedBox.shrink()
+                : IconButton(
+              tooltip: 'Hapus pencarian',
+              icon: const Icon(Icons.clear),
+              onPressed: () {
+                _controller.clear();
+                vm.ubahKueri('');
+              },
+            ),
+          ),
+        ),
       ),
     );
   }

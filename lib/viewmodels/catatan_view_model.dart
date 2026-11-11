@@ -6,6 +6,7 @@ import '../data/api_client.dart';
 import '../data/catatan_repository.dart';
 import '../data/sinkron_service.dart';
 import '../models/catatan.dart';
+import '../utils/cari_catatan.dart';
 import '../utils/urutan_catatan.dart';
 
 /// Status hubungan dengan server pada sinkronisasi terakhir.
@@ -29,6 +30,17 @@ class CatatanViewModel extends ChangeNotifier {
   UrutanCatatan _urutan = UrutanCatatan.terbaru;
   UrutanCatatan get urutan => _urutan;
 
+  String _kueri = '';
+
+  /// Kata kunci pencarian yang sedang aktif ('' = tidak mencari).
+  String get kueri => _kueri;
+
+  bool get sedangMencari => _kueri.trim().isNotEmpty;
+
+  /// Catatan yang cocok dengan [kueri], tetap dalam urutan [urutan].
+  /// Dihitung dari data lokal, jadi pencarian bekerja tanpa koneksi.
+  List<Catatan> get hasilCari => cariCatatan(_catatan, _kueri);
+
   bool isLoading = false;
   String? error;
 
@@ -51,6 +63,13 @@ class CatatanViewModel extends ChangeNotifier {
     if (baru == _urutan) return;
     _urutan = baru;
     _catatan = urutkanCatatan(_catatan, _urutan);
+    notifyListeners();
+  }
+
+  /// Pencarian hanya menyaring tampilan; data dan antrian sinkron tidak berubah.
+  void ubahKueri(String baru) {
+    if (baru == _kueri) return;
+    _kueri = baru;
     notifyListeners();
   }
 
