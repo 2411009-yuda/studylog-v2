@@ -35,6 +35,14 @@ class CatatanRepository {
     return tersimpan;
   }
 
+  /// Menandai/melepas favorit. Hanya lokal: tidak masuk antrian sinkron
+  /// (server tidak punya data favorit), jadi catatan tidak ditandai "menunggu".
+  Future<void> setFavorit(int id, bool favorit) async {
+    final catatan = await local.catatanById(id);
+    if (catatan == null) return;
+    await local.setFavorit(catatan.clientId, favorit);
+  }
+
   /// Menghapus di perangkat sekarang juga; penghapusan di server menyusul.
   Future<void> hapus(int id) async {
     final catatan = await local.catatanById(id);

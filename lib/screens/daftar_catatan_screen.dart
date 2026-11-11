@@ -212,6 +212,19 @@ class _ItemCatatan extends StatelessWidget {
                   child: Icon(Icons.cloud_upload_outlined,
                       size: 20, color: UmColors.blue),
                 ),
+              IconButton(
+                tooltip: catatan.favorit
+                    ? 'Hapus dari favorit'
+                    : 'Tandai favorit',
+                visualDensity: VisualDensity.compact,
+                icon: Icon(
+                  catatan.favorit ? Icons.star : Icons.star_border,
+                  color: catatan.favorit ? Colors.amber.shade700 : null,
+                ),
+                onPressed: () => context
+                    .read<CatatanViewModel>()
+                    .setFavorit(catatan.id!, !catatan.favorit),
+              ),
               const Icon(Icons.chevron_right),
             ],
           ),
@@ -271,9 +284,11 @@ class _TidakAdaHasil extends StatelessWidget {
           const Icon(Icons.search_off, size: 48, color: Colors.black45),
           const SizedBox(height: 12),
           Text(
-            kata.isEmpty
-                ? 'Tidak ada catatan untuk mata kuliah ini.'
-                : 'Tidak ada catatan yang cocok dengan "$kata".',
+            kata.isNotEmpty
+                ? 'Tidak ada catatan yang cocok dengan "$kata".'
+                : vm.hanyaFavorit
+                    ? 'Belum ada catatan favorit yang cocok dengan filter.'
+                    : 'Tidak ada catatan untuk mata kuliah ini.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -287,7 +302,8 @@ class _TidakAdaHasil extends StatelessWidget {
   }
 }
 
-/// Baris chip filter mata kuliah. Menekan chip yang sedang aktif melepas filter.
+/// Baris chip filter: Semua, Favorit, lalu satu chip per mata kuliah.
+/// Favorit dan mata kuliah bisa digabung. Menekan chip yang sedang aktif melepas filter.
 class _BarisMataKuliah extends StatelessWidget {
   const _BarisMataKuliah({required this.vm});
 
@@ -308,6 +324,19 @@ class _BarisMataKuliah extends StatelessWidget {
               label: Text('Semua (${vm.catatan.length})'),
               selected: aktif == null,
               onSelected: (_) => vm.ubahFilterMataKuliah(null),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              avatar: Icon(
+                Icons.star,
+                size: 18,
+                color: vm.hanyaFavorit ? null : Colors.amber.shade700,
+              ),
+              label: Text('Favorit (${vm.jumlahFavorit})'),
+              selected: vm.hanyaFavorit,
+              onSelected: vm.ubahHanyaFavorit,
             ),
           ),
           for (final mk in vm.daftarMataKuliah)

@@ -18,7 +18,11 @@ class SqliteLocalStore implements LocalStore {
     final lokasi = join(await getDatabasesPath(), namaFile);
     return openDatabase(
       lokasi,
-      version: 1,
+      version: 2,
+      onUpgrade: (db, lama, baru) async {
+        // v1 -> v2: tabel favorit. Data catatan lama tidak disentuh.
+        if (lama < 2) await _buatTabelFavorit(db);
+      },
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE catatan (
@@ -50,14 +54,24 @@ class SqliteLocalStore implements LocalStore {
             nilai TEXT NOT NULL
           )
         ''');
+        await _buatTabelFavorit(db);
       },
     );
   }
 
+  Future<void> _buatTabelFavorit(Database db) => db.execute('''
+        CREATE TABLE IF NOT EXISTS favorit (
+          client_id TEXT PRIMARY KEY
+        )
+      ''');
+
   static const _selectCatatan = '''
-    SELECT c.*, CASE WHEN a.client_id IS NULL THEN 0 ELSE 1 END AS menunggu
+    SELECT c.*,
+           CASE WHEN a.client_id IS NULL THEN 0 ELSE 1 END AS menunggu,
+           CASE WHEN f.client_id IS NULL THEN 0 ELSE 1 END AS favorit
       FROM catatan c
       LEFT JOIN antrian a ON a.client_id = c.client_id
+      LEFT JOIN favorit f ON f.client_id = c.client_id
   ''';
 
   Catatan _dariRow(Map<String, Object?> r) => Catatan(
@@ -65,6 +79,7 @@ class SqliteLocalStore implements LocalStore {
         clientId: r['client_id'] as String,
         serverId: r['server_id'] as int?,
         menunggu: (r['menunggu'] as int? ?? 0) == 1,
+        favorit: (r['favorit'] as int? ?? 0) == 1,
         mataKuliahId: r['mata_kuliah_id'] as int,
         mataKuliahKode: r['mata_kuliah_kode'] as String,
         mataKuliahNama: r['mata_kuliah_nama'] as String,
@@ -132,7 +147,24 @@ class SqliteLocalStore implements LocalStore {
   @override
   Future<void> hapusCatatan(String clientId) async {
     final db = await _db;
-    await db.delete('catatan', where: 'client_id = ?', whereArgs: [clientId]);
+    await db.transaction((txn) async {
+      await txn.delete('catatan',
+          where: 'client_id = ?', whereArgs: [clientId]);
+      await txn.delete('favorit',
+          where: 'client_id = ?', whereArgs: [clientId]);
+    });
+  }
+
+  @override
+  Future<void> setFavorit(String clientId, bool favorit) async {
+    final db = await _db;
+    if (favorit) {
+      await db.insert('favorit', {'client_id': clientId},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    } else {
+      await db.delete('favorit',
+          where: 'client_id = ?', whereArgs: [clientId]);
+    }
   }
 
   @override

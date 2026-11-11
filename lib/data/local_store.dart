@@ -40,6 +40,11 @@ abstract class LocalStore {
   Future<void> hapusCatatan(String clientId);
   Future<void> setServerId(String clientId, int serverId);
 
+  /// Menandai/melepas favorit. Disimpan terpisah dari data catatan (dan dari
+  /// antrian), jadi tidak ikut tertimpa saat catatan diubah atau disinkronkan.
+  /// [Catatan.favorit] pada hasil baca diisi dari sini.
+  Future<void> setFavorit(String clientId, bool favorit);
+
   /// Antrian, tertua dulu.
   Future<List<ItemAntrian>> antrian();
 

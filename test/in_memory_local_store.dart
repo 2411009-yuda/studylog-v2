@@ -19,11 +19,14 @@ class InMemoryLocalStore implements LocalStore {
   final List<Catatan> _rows = [];
   final Map<String, _Antri> _antrian = {};
   final Map<String, String> _cache = {};
+  final Set<String> _favorit = {};
   int _idBerikut = 1;
   int _urutBerikut = 1;
 
-  Catatan _tandai(Catatan c) =>
-      c.copyWith(menunggu: _antrian.containsKey(c.clientId));
+  Catatan _tandai(Catatan c) => c.copyWith(
+        menunggu: _antrian.containsKey(c.clientId),
+        favorit: _favorit.contains(c.clientId),
+      );
 
   @override
   Future<List<Catatan>> semuaCatatan() async {
@@ -68,6 +71,16 @@ class InMemoryLocalStore implements LocalStore {
   @override
   Future<void> hapusCatatan(String clientId) async {
     _rows.removeWhere((c) => c.clientId == clientId);
+    _favorit.remove(clientId);
+  }
+
+  @override
+  Future<void> setFavorit(String clientId, bool favorit) async {
+    if (favorit) {
+      _favorit.add(clientId);
+    } else {
+      _favorit.remove(clientId);
+    }
   }
 
   @override

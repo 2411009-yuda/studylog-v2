@@ -10,6 +10,7 @@ class Catatan {
     this.clientId = '',
     this.serverId,
     this.menunggu = false,
+    this.favorit = false,
     required this.mataKuliahId,
     this.mataKuliahKode = '',
     this.mataKuliahNama = '',
@@ -26,6 +27,11 @@ class Catatan {
   /// True jika ada perubahan catatan ini yang belum terkirim ke server.
   final bool menunggu;
 
+  /// Ditandai favorit oleh pengguna. Hanya ada di perangkat ini: disimpan di
+  /// tabel lokal terpisah, tidak ikut dikirim ke server dan tidak berubah oleh
+  /// sinkronisasi.
+  final bool favorit;
+
   final int mataKuliahId;
   final String mataKuliahKode;
   final String mataKuliahNama;
@@ -39,6 +45,7 @@ class Catatan {
     String? clientId,
     int? serverId,
     bool? menunggu,
+    bool? favorit,
     int? mataKuliahId,
     String? mataKuliahKode,
     String? mataKuliahNama,
@@ -52,6 +59,7 @@ class Catatan {
         clientId: clientId ?? this.clientId,
         serverId: serverId ?? this.serverId,
         menunggu: menunggu ?? this.menunggu,
+        favorit: favorit ?? this.favorit,
         mataKuliahId: mataKuliahId ?? this.mataKuliahId,
         mataKuliahKode: mataKuliahKode ?? this.mataKuliahKode,
         mataKuliahNama: mataKuliahNama ?? this.mataKuliahNama,

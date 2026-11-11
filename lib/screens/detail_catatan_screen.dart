@@ -35,6 +35,14 @@ class DetailCatatanScreen extends StatelessWidget {
         'Detail Catatan',
         actions: [
           IconButton(
+            tooltip: catatan.favorit ? 'Hapus dari favorit' : 'Tandai favorit',
+            icon: Icon(
+              catatan.favorit ? Icons.star : Icons.star_border,
+              color: catatan.favorit ? Colors.amber.shade300 : null,
+            ),
+            onPressed: () => vm.setFavorit(catatan.id!, !catatan.favorit),
+          ),
+          IconButton(
             tooltip: 'Salin teks',
             icon: const Icon(Icons.copy),
             onPressed: () => salinTeks(

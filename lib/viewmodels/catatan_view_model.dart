@@ -47,6 +47,13 @@ class CatatanViewModel extends ChangeNotifier {
   /// Id mata kuliah yang dipilih sebagai filter (null = semua mata kuliah).
   int? get filterMataKuliahId => _filterMataKuliahId;
 
+  bool _hanyaFavorit = false;
+
+  /// True jika hanya catatan favorit yang ditampilkan.
+  bool get hanyaFavorit => _hanyaFavorit;
+
+  int get jumlahFavorit => _catatan.where((c) => c.favorit).length;
+
   bool _kelompokkan = false;
 
   /// True jika daftar ditampilkan per kelompok mata kuliah.
@@ -58,12 +65,15 @@ class CatatanViewModel extends ChangeNotifier {
   List<RingkasMataKuliah> get daftarMataKuliah => ringkasMataKuliah(_catatan);
 
   /// True jika pencarian atau filter mata kuliah sedang aktif.
-  bool get sedangMenyaring => sedangMencari || _filterMataKuliahId != null;
+  bool get sedangMenyaring =>
+      sedangMencari || _filterMataKuliahId != null || _hanyaFavorit;
 
   /// Yang benar-benar ditampilkan: pencarian + filter mata kuliah,
   /// dalam urutan [urutan].
-  List<Catatan> get catatanTampil =>
-      filterMataKuliah(hasilCari, _filterMataKuliahId);
+  List<Catatan> get catatanTampil {
+    final hasil = filterMataKuliah(hasilCari, _filterMataKuliahId);
+    return _hanyaFavorit ? hasil.where((c) => c.favorit).toList() : hasil;
+  }
 
   /// [catatanTampil] dikelompokkan per mata kuliah.
   List<KelompokCatatan> get kelompokTampil =>
@@ -107,17 +117,32 @@ class CatatanViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void ubahHanyaFavorit(bool nilai) {
+    if (nilai == _hanyaFavorit) return;
+    _hanyaFavorit = nilai;
+    notifyListeners();
+  }
+
+  /// Menandai/melepas favorit. Hanya menulis ke penyimpanan lokal; tidak ada
+  /// sinkronisasi karena favorit tidak dikirim ke server.
+  Future<void> setFavorit(int id, bool nilai) async {
+    await repository.setFavorit(id, nilai);
+    await _bacaLokal();
+    notifyListeners();
+  }
+
   void ubahKelompokkan(bool nilai) {
     if (nilai == _kelompokkan) return;
     _kelompokkan = nilai;
     notifyListeners();
   }
 
-  /// Menghapus pencarian dan filter sekaligus.
+  /// Menghapus pencarian dan semua filter (mata kuliah, favorit) sekaligus.
   void resetPenyaring() {
     if (!sedangMenyaring && _kueri.isEmpty) return;
     _kueri = '';
     _filterMataKuliahId = null;
+    _hanyaFavorit = false;
     notifyListeners();
   }
 
