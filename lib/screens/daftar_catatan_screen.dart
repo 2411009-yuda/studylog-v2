@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../app/routes.dart';
 import '../app/theme.dart';
+import '../models/catatan.dart';
 import '../utils/ekspor_aksi.dart';
 import '../utils/ekspor_teks.dart';
+import '../utils/kelompok_catatan.dart';
 import '../utils/navigasi_catatan.dart';
 import '../utils/sinkron_aksi.dart';
 import '../utils/urutan_catatan.dart';
@@ -15,6 +17,7 @@ import '../widgets/um_widgets.dart';
 
 /// Daftar Catatan. Membaca CatatanViewModel lewat Consumer, sehingga daftar
 /// otomatis diperbarui setelah tambah/ubah/hapus. Tarik ke bawah = muat ulang.
+/// Bisa dicari, difilter per mata kuliah, dan dikelompokkan per mata kuliah.
 class DaftarCatatanScreen extends StatelessWidget {
   const DaftarCatatanScreen({super.key});
 
@@ -37,11 +40,14 @@ class DaftarCatatanScreen extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: StatusSinkronBanner(),
         ),
-        // Kolom cari hanya muncul jika sudah ada catatan.
-        Selector<CatatanViewModel, bool>(
-          selector: (_, vm) => vm.catatan.isNotEmpty,
-          builder: (_, adaCatatan, _) =>
-          adaCatatan ? const _KolomCari() : const SizedBox.shrink(),
+        // Kolom cari + filter mata kuliah hanya muncul jika sudah ada catatan.
+        Consumer<CatatanViewModel>(
+          builder: (_, vm, _) => vm.catatan.isEmpty
+              ? const SizedBox.shrink()
+              : Column(children: [
+                  _KolomCari(kueri: vm.kueri),
+                  _BarisMataKuliah(vm: vm),
+                ]),
         ),
         Expanded(child: Consumer<CatatanViewModel>(builder: (context, vm, _) {
           if (vm.isLoading && vm.catatan.isEmpty) {
@@ -80,7 +86,7 @@ class DaftarCatatanScreen extends StatelessWidget {
               ),
             );
           }
-          final tampil = vm.hasilCari;
+          final tampil = vm.catatanTampil;
           return RefreshIndicator(
             onRefresh: () => sinkronSemua(context),
             child: ListView(
@@ -97,15 +103,17 @@ class DaftarCatatanScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              vm.sedangMencari
+                              vm.sedangMenyaring
                                   ? 'Ditemukan: ${tampil.length} dari '
-                                  '${vm.catatan.length} catatan'
+                                      '${vm.catatan.length} catatan'
                                   : 'Total: ${vm.catatan.length} catatan',
-                              style:
-                              Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: UmColors.navy,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: UmColors.navy,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
                             Text(
                               'Urutan: ${vm.urutan.label}',
@@ -113,6 +121,15 @@ class DaftarCatatanScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+                      ),
+                      IconButton(
+                        tooltip: vm.kelompokkan
+                            ? 'Tampilkan tanpa kelompok'
+                            : 'Kelompokkan per mata kuliah',
+                        isSelected: vm.kelompokkan,
+                        icon: const Icon(Icons.view_agenda_outlined),
+                        selectedIcon: const Icon(Icons.view_agenda),
+                        onPressed: () => vm.ubahKelompokkan(!vm.kelompokkan),
                       ),
                       PopupMenuButton<UrutanCatatan>(
                         tooltip: 'Urutkan',
@@ -142,59 +159,16 @@ class DaftarCatatanScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (vm.sedangMencari && tampil.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.search_off,
-                            size: 48, color: Colors.black45),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Tidak ada catatan yang cocok dengan '
-                              '"${vm.kueri.trim()}".',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: () => vm.ubahKueri(''),
-                          child: const Text('Hapus pencarian'),
-                        ),
-                      ],
-                    ),
-                  ),
-                for (final catatan in tampil)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: SectionCard(
-                      padding: EdgeInsets.zero,
-                      child: ListTile(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        title: Text(catatan.judul),
-                        subtitle: Text(
-                            '${catatan.mataKuliahNama} · ${catatan.topik}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (catatan.menunggu)
-                              const Tooltip(
-                                message: 'Menunggu sinkron',
-                                child: Icon(Icons.cloud_upload_outlined,
-                                    size: 20, color: UmColors.blue),
-                              ),
-                            const Icon(Icons.chevron_right),
-                          ],
-                        ),
-                        // Data dikirim seperlunya: cukup id catatan.
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.detail,
-                          arguments: catatan.id,
-                        ),
-                      ),
-                    ),
-                  ),
+                if (vm.sedangMenyaring && tampil.isEmpty)
+                  _TidakAdaHasil(vm: vm)
+                else if (vm.kelompokkan)
+                  for (final kelompok in vm.kelompokTampil) ...[
+                    _JudulKelompok(kelompok.mataKuliah),
+                    for (final catatan in kelompok.catatan)
+                      _ItemCatatan(catatan, tampilkanMataKuliah: false),
+                  ]
+                else
+                  for (final catatan in tampil) _ItemCatatan(catatan),
               ],
             ),
           );
@@ -209,24 +183,174 @@ class DaftarCatatanScreen extends StatelessWidget {
   }
 }
 
-/// Kolom pencarian. Controller dimiliki widget ini; nilai awalnya diambil dari
-/// ViewModel agar kata kunci tidak hilang saat widget dibangun ulang.
+/// Satu catatan pada daftar. Pada tampilan berkelompok nama mata kuliah sudah
+/// ada di judul kelompok, jadi subtitle cukup menampilkan topik.
+class _ItemCatatan extends StatelessWidget {
+  const _ItemCatatan(this.catatan, {this.tampilkanMataKuliah = true});
+
+  final Catatan catatan;
+  final bool tampilkanMataKuliah;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SectionCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(catatan.judul),
+          subtitle: Text(tampilkanMataKuliah
+              ? '${catatan.mataKuliahNama} · ${catatan.topik}'
+              : catatan.topik),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (catatan.menunggu)
+                const Tooltip(
+                  message: 'Menunggu sinkron',
+                  child: Icon(Icons.cloud_upload_outlined,
+                      size: 20, color: UmColors.blue),
+                ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+          // Data dikirim seperlunya: cukup id catatan.
+          onTap: () => Navigator.pushNamed(
+            context,
+            AppRoutes.detail,
+            arguments: catatan.id,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _JudulKelompok extends StatelessWidget {
+  const _JudulKelompok(this.mk);
+
+  final RingkasMataKuliah mk;
+
+  @override
+  Widget build(BuildContext context) {
+    final kode = mk.kode.isEmpty ? '' : ' (${mk.kode})';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+      child: Row(children: [
+        const Icon(Icons.folder_outlined, size: 18, color: UmColors.navy),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '${mk.label}$kode',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: UmColors.navy,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+        ),
+        Text('${mk.jumlah} catatan',
+            style: Theme.of(context).textTheme.bodySmall),
+      ]),
+    );
+  }
+}
+
+class _TidakAdaHasil extends StatelessWidget {
+  const _TidakAdaHasil({required this.vm});
+
+  final CatatanViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final kata = vm.kueri.trim();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          const Icon(Icons.search_off, size: 48, color: Colors.black45),
+          const SizedBox(height: 12),
+          Text(
+            kata.isEmpty
+                ? 'Tidak ada catatan untuk mata kuliah ini.'
+                : 'Tidak ada catatan yang cocok dengan "$kata".',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: vm.resetPenyaring,
+            child: const Text('Hapus pencarian & filter'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Baris chip filter mata kuliah. Menekan chip yang sedang aktif melepas filter.
+class _BarisMataKuliah extends StatelessWidget {
+  const _BarisMataKuliah({required this.vm});
+
+  final CatatanViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final aktif = vm.filterMataKuliahId;
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text('Semua (${vm.catatan.length})'),
+              selected: aktif == null,
+              onSelected: (_) => vm.ubahFilterMataKuliah(null),
+            ),
+          ),
+          for (final mk in vm.daftarMataKuliah)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text('${mk.label} (${mk.jumlah})'),
+                selected: aktif == mk.id,
+                onSelected: (_) =>
+                    vm.ubahFilterMataKuliah(aktif == mk.id ? null : mk.id),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kolom pencarian. Controller dimiliki widget ini dan disamakan dengan
+/// [kueri] dari ViewModel, sehingga tombol "Hapus pencarian & filter" di
+/// tempat lain ikut mengosongkan kolom ini.
 class _KolomCari extends StatefulWidget {
-  const _KolomCari();
+  const _KolomCari({required this.kueri});
+
+  final String kueri;
 
   @override
   State<_KolomCari> createState() => _KolomCariState();
 }
 
 class _KolomCariState extends State<_KolomCari> {
-  late final TextEditingController _controller;
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.kueri);
 
   @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(
-      text: context.read<CatatanViewModel>().kueri,
-    );
+  void didUpdateWidget(covariant _KolomCari lama) {
+    super.didUpdateWidget(lama);
+    if (widget.kueri != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.kueri,
+        selection: TextSelection.collapsed(offset: widget.kueri.length),
+      );
+    }
   }
 
   @override
@@ -252,13 +376,13 @@ class _KolomCariState extends State<_KolomCari> {
             builder: (_, value, _) => value.text.isEmpty
                 ? const SizedBox.shrink()
                 : IconButton(
-              tooltip: 'Hapus pencarian',
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                _controller.clear();
-                vm.ubahKueri('');
-              },
-            ),
+                    tooltip: 'Hapus pencarian',
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _controller.clear();
+                      vm.ubahKueri('');
+                    },
+                  ),
           ),
         ),
       ),

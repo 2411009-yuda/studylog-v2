@@ -7,6 +7,7 @@ import '../data/catatan_repository.dart';
 import '../data/sinkron_service.dart';
 import '../models/catatan.dart';
 import '../utils/cari_catatan.dart';
+import '../utils/kelompok_catatan.dart';
 import '../utils/urutan_catatan.dart';
 
 /// Status hubungan dengan server pada sinkronisasi terakhir.
@@ -41,6 +42,33 @@ class CatatanViewModel extends ChangeNotifier {
   /// Dihitung dari data lokal, jadi pencarian bekerja tanpa koneksi.
   List<Catatan> get hasilCari => cariCatatan(_catatan, _kueri);
 
+  int? _filterMataKuliahId;
+
+  /// Id mata kuliah yang dipilih sebagai filter (null = semua mata kuliah).
+  int? get filterMataKuliahId => _filterMataKuliahId;
+
+  bool _kelompokkan = false;
+
+  /// True jika daftar ditampilkan per kelompok mata kuliah.
+  bool get kelompokkan => _kelompokkan;
+
+  /// Mata kuliah yang punya catatan, beserta jumlahnya (untuk chip filter).
+  /// Selalu dihitung dari semua catatan agar jumlahnya tidak ikut berubah
+  /// saat mencari.
+  List<RingkasMataKuliah> get daftarMataKuliah => ringkasMataKuliah(_catatan);
+
+  /// True jika pencarian atau filter mata kuliah sedang aktif.
+  bool get sedangMenyaring => sedangMencari || _filterMataKuliahId != null;
+
+  /// Yang benar-benar ditampilkan: pencarian + filter mata kuliah,
+  /// dalam urutan [urutan].
+  List<Catatan> get catatanTampil =>
+      filterMataKuliah(hasilCari, _filterMataKuliahId);
+
+  /// [catatanTampil] dikelompokkan per mata kuliah.
+  List<KelompokCatatan> get kelompokTampil =>
+      kelompokkanPerMataKuliah(catatanTampil);
+
   bool isLoading = false;
   String? error;
 
@@ -73,6 +101,26 @@ class CatatanViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void ubahFilterMataKuliah(int? id) {
+    if (id == _filterMataKuliahId) return;
+    _filterMataKuliahId = id;
+    notifyListeners();
+  }
+
+  void ubahKelompokkan(bool nilai) {
+    if (nilai == _kelompokkan) return;
+    _kelompokkan = nilai;
+    notifyListeners();
+  }
+
+  /// Menghapus pencarian dan filter sekaligus.
+  void resetPenyaring() {
+    if (!sedangMenyaring && _kueri.isEmpty) return;
+    _kueri = '';
+    _filterMataKuliahId = null;
+    notifyListeners();
+  }
+
   Catatan? byId(int id) {
     for (final item in _catatan) {
       if (item.id == id) return item;
@@ -88,6 +136,12 @@ class CatatanViewModel extends ChangeNotifier {
 
   Future<void> _bacaLokal() async {
     _catatan = urutkanCatatan(await repository.semua(), _urutan);
+    // Filter dilepas jika mata kuliahnya sudah tidak punya catatan
+    // (dihapus, atau hilang setelah sinkron).
+    if (_filterMataKuliahId != null &&
+        !_catatan.any((c) => c.mataKuliahId == _filterMataKuliahId)) {
+      _filterMataKuliahId = null;
+    }
     final antrian = await repository.antrian();
     tertunda = antrian.length;
     ditolak = antrian.where((i) => i.error != null).length;
