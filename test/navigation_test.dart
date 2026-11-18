@@ -117,4 +117,33 @@ void main() {
     );
     expect(simpan.onPressed, isNull);
   });
+
+  testWidgets('email tanpa @ ditolak dan field kosong wajib diisi',
+      (tester) async {
+    await bukaApp(tester, FakeServer());
+
+    await tapTab(tester, 'Profil');
+    await tester.tap(find.text('Edit Profil'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextFormField);
+    expect(fields, findsNWidgets(6));
+
+    await tester.enterText(fields.at(5), 'tanpaat.com');
+    await tester.pump();
+    expect(find.text("Email harus mengandung '@'"), findsOneWidget);
+
+    await tester.enterText(fields.at(5), '');
+    await tester.pump();
+    expect(find.text('Email wajib diisi'), findsOneWidget);
+
+    await tester.enterText(fields.at(1), '');
+    await tester.pump();
+    expect(find.text('NIM wajib diisi'), findsOneWidget);
+
+    final simpan = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Simpan'),
+    );
+    expect(simpan.onPressed, isNull);
+  });
 }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../app/theme.dart';
 import '../config/app_info.dart';
-import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/um_widgets.dart';
 
 /// Halaman "Tentang Aplikasi" (tugas pengayaan Praktikum 2), dibuka dari
@@ -13,35 +11,18 @@ class TentangScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final student = context.watch<ProfileViewModel>().student;
     final textTheme = Theme.of(context).textTheme;
 
     Widget judul(String teks) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            teks,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: UmColors.navy,
-            ),
-          ),
-        );
-
-    Widget baris(String label, String nilai) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 104,
-                child: Text(label,
-                    style: textTheme.bodyMedium
-                        ?.copyWith(color: Colors.black54)),
-              ),
-              Expanded(child: Text(nilai)),
-            ],
-          ),
-        );
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        teks,
+        style: textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: UmColors.navy,
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: umAppBar('Tentang Aplikasi'),
@@ -135,22 +116,6 @@ class TentangScreen extends StatelessWidget {
                     for (final t in AppInfo.teknologi) Chip(label: Text(t)),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // ---- Pengembang (mengikuti data profil) ----
-          SectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                judul('Pengembang'),
-                baris('Nama', student.nama),
-                baris('NIM', student.nim),
-                baris('Program studi', student.programStudi),
-                baris('Institusi', AppInfo.institusi),
-                baris('Mata kuliah', AppInfo.mataKuliah),
               ],
             ),
           ),

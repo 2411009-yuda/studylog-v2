@@ -32,12 +32,47 @@ void main() {
       var notified = 0;
       vm.addListener(() => notified++);
 
-      vm.updateProfile(nama: '  Yuda P  ', programStudi: ' S1 Informatika ');
+      vm.updateProfile(
+        nama: '  Yuda P  ',
+        nim: ' 2411010 ',
+        programStudi: ' S1 Informatika ',
+        status: ' Cuti ',
+        semester: 6,
+        email: ' yuda@mail.com ',
+      );
 
       expect(vm.student.nama, 'Yuda P');
+      expect(vm.student.nim, '2411010');
       expect(vm.student.programStudi, 'S1 Informatika');
-      expect(vm.student.nim, '2411009'); // field lain tidak berubah
+      expect(vm.student.status, 'Cuti');
+      expect(vm.student.semester, 6);
+      expect(vm.student.email, 'yuda@mail.com');
       expect(notified, 1);
+    });
+
+    test('validateNim & validateStatus menolak kosong', () {
+      final vm = ProfileViewModel();
+      expect(vm.validateNim(' '), 'NIM wajib diisi');
+      expect(vm.validateNim('2411009'), isNull);
+      expect(vm.validateStatus(''), 'Status wajib diisi');
+      expect(vm.validateStatus('Aktif'), isNull);
+    });
+
+    test('validateSemester menolak kosong, bukan angka, dan kurang dari 1',
+        () {
+      final vm = ProfileViewModel();
+      expect(vm.validateSemester(''), 'Semester wajib diisi');
+      expect(vm.validateSemester('abc'), isNotNull);
+      expect(vm.validateSemester('0'), isNotNull);
+      expect(vm.validateSemester('5'), isNull);
+    });
+
+    test("validateEmail wajib diisi dan wajib mengandung '@'", () {
+      final vm = ProfileViewModel();
+      expect(vm.validateEmail(''), 'Email wajib diisi');
+      expect(vm.validateEmail('   '), 'Email wajib diisi');
+      expect(vm.validateEmail('yudamail.com'), isNotNull);
+      expect(vm.validateEmail('yuda@mail.com'), isNull);
     });
 
     test('resetPhoto memberi notifikasi', () {

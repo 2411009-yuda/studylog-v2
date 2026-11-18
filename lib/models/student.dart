@@ -20,14 +20,21 @@ class Student {
   final String portfolioUrl;
   final String githubUrl;
 
-  Student copyWith({String? nama, String? programStudi}) {
+  Student copyWith({
+    String? nama,
+    String? nim,
+    String? programStudi,
+    String? status,
+    int? semester,
+    String? email,
+  }) {
     return Student(
       nama: nama ?? this.nama,
-      nim: nim,
+      nim: nim ?? this.nim,
       programStudi: programStudi ?? this.programStudi,
-      status: status,
-      semester: semester,
-      email: email,
+      status: status ?? this.status,
+      semester: semester ?? this.semester,
+      email: email ?? this.email,
       portfolioUrl: portfolioUrl,
       githubUrl: githubUrl,
     );

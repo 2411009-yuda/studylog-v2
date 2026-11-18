@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../app/routes.dart';
 import '../app/theme.dart';
+import '../models/student.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/um_widgets.dart';
@@ -116,16 +117,20 @@ class ProfileScreen extends StatelessWidget {
     final vm = context.read<ProfileViewModel>();
     final messenger = ScaffoldMessenger.of(context);
 
-    final result = await showDialog<List<String>>(
+    final result = await showDialog<Student>(
       context: context,
-      builder: (_) => EditProfileDialog(
-        initialNama: vm.student.nama,
-        initialProdi: vm.student.programStudi,
-      ),
+      builder: (_) => EditProfileDialog(initial: vm.student),
     );
     if (result == null) return; // dibatalkan
 
-    vm.updateProfile(nama: result[0], programStudi: result[1]);
+    vm.updateProfile(
+      nama: result.nama,
+      nim: result.nim,
+      programStudi: result.programStudi,
+      status: result.status,
+      semester: result.semester,
+      email: result.email,
+    );
     messenger.showSnackBar(
       const SnackBar(content: Text('Profil berhasil disimpan')),
     );

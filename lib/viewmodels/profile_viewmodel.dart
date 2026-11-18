@@ -36,10 +36,21 @@ class ProfileViewModel extends ChangeNotifier {
 
   // ---- Event dari UI ----
 
-  void updateProfile({required String nama, required String programStudi}) {
+  void updateProfile({
+    required String nama,
+    required String nim,
+    required String programStudi,
+    required String status,
+    required int semester,
+    required String email,
+  }) {
     _student = _student.copyWith(
       nama: nama.trim(),
+      nim: nim.trim(),
       programStudi: programStudi.trim(),
+      status: status.trim(),
+      semester: semester,
+      email: email.trim(),
     );
     notifyListeners();
   }
@@ -74,9 +85,36 @@ class ProfileViewModel extends ChangeNotifier {
     return null;
   }
 
+  String? validateNim(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'NIM wajib diisi';
+    return null;
+  }
+
   String? validateProdi(String? value) {
     final text = (value ?? '').trim();
     if (text.isEmpty) return 'Program studi wajib diisi';
+    return null;
+  }
+
+  String? validateStatus(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'Status wajib diisi';
+    return null;
+  }
+
+  String? validateSemester(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'Semester wajib diisi';
+    final angka = int.tryParse(text);
+    if (angka == null || angka < 1) return 'Semester harus berupa angka (minimal 1)';
+    return null;
+  }
+
+  String? validateEmail(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'Email wajib diisi';
+    if (!text.contains('@')) return "Email harus mengandung '@'";
     return null;
   }
 }
