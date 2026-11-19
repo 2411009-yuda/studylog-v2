@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../data/realtime_service.dart';
 import '../utils/sinkron_aksi.dart';
 import '../viewmodels/catatan_view_model.dart';
+import '../viewmodels/pengingat_view_model.dart';
 import '../viewmodels/penilaian_view_model.dart';
 
 /// Mengatur kapan data ditarik/dikirim:
@@ -77,6 +78,8 @@ class _SinkronPemicuState extends State<SinkronPemicu>
       _realtime?.mulai();
       debugPrint('[SinkronPemicu] Status setelah mulai: ${_realtime?.status}');
       unawaited(sinkronSemua(context));
+      // Waktu berjalan selama aplikasi di background: hitung ulang yang terlewat.
+      context.read<PengingatViewModel>().perbarui();
     }
   }
 

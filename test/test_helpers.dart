@@ -4,6 +4,7 @@ import 'package:profil_mahasiswa/app/app.dart';
 import 'package:profil_mahasiswa/data/local_store.dart';
 import 'package:profil_mahasiswa/data/realtime_service.dart';
 import 'package:profil_mahasiswa/services/ekspor_service.dart';
+import 'package:profil_mahasiswa/services/notifikasi_service.dart';
 
 import 'fake_realtime.dart';
 import 'fake_server.dart';
@@ -67,6 +68,10 @@ Future<void> bukaApp(
     localStore: local ?? InMemoryLocalStore(),
     sinkronInterval: interval,
     realtimeService: layananRealtime,
+    notifikasiService: const NotifikasiTidakAktif(),
+    // Semester dianggap belum mulai agar kartu pengingat tidak ikut tampil
+    // pada tes lain.
+    awalSemester: DateTime(2030, 1, 1),
   ));
   await tester.pumpAndSettle();
 }
