@@ -12,16 +12,23 @@ class AppInfo {
 
   static const deskripsi =
       'StudyLog membantu mahasiswa mencatat materi kuliah, mencari dan '
-      'mengurutkannya, lalu membagikannya. Catatan tersimpan di perangkat '
-      'sehingga tetap bisa dipakai tanpa internet, dan otomatis disinkronkan '
-      'ke server saat terhubung.';
+      'mengelompokkannya per mata kuliah, lalu membagikannya. Catatan '
+      'tersimpan di perangkat sehingga tetap bisa dipakai tanpa internet, dan '
+      'otomatis disinkronkan ke server saat terhubung. StudyLog juga '
+      'mengingatkan penilaian dosen dan catatan kelas yang terlewat.';
 
-  /// (ikon-nama, judul, keterangan) ditampilkan sebagai daftar fitur.
+  /// (judul, keterangan) ditampilkan sebagai daftar fitur.
   static const fitur = <({String judul, String keterangan})>[
     (
       judul: 'Catat dengan cepat',
       keterangan:
           'Tombol + mengisi mata kuliah otomatis sesuai jadwal kuliah hari ini.',
+    ),
+    (
+      judul: 'Cari, saring, dan favorit',
+      keterangan:
+          'Cari di judul, topik, dan isi catatan; saring per mata kuliah atau '
+          'tampilkan favorit saja.',
     ),
     (
       judul: 'Tetap bisa offline',
@@ -37,6 +44,17 @@ class AppInfo {
       judul: 'Urutkan dan ekspor',
       keterangan: 'Urutkan daftar, lalu salin atau bagikan sebagai teks.',
     ),
+    (
+      judul: 'Penilaian dosen',
+      keterangan:
+          'Nilai dosen tiap pertemuan (skala 1-5 untuk lima aspek); tersimpan '
+          'offline dan ikut tersinkron.',
+    ),
+    (
+      judul: 'Pengingat harian',
+      keterangan:
+          'Notifikasi untuk penilaian dosen dan catatan kelas yang terlewat.',
+    ),
   ];
 
   static const teknologi = <String>[
@@ -47,5 +65,6 @@ class AppInfo {
     'Node.js',
     'MySQL',
     'WebSocket',
+    'Notifikasi lokal',
   ];
 }

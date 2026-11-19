@@ -1,11 +1,15 @@
 # StudyLog — Aplikasi Catatan Perkuliahan Berbasis Flutter Android
 
 <p align="center">
+  <img src="assets/images/studylog_logo.png" alt="Ikon aplikasi StudyLog" width="160">
+</p>
+
+<p align="center">
   <strong>STUDYLOG</strong><br>
   Aplikasi Pencatatan Materi Perkuliahan Berbasis Android
 </p>
 
-StudyLog merupakan aplikasi pencatatan materi perkuliahan berbasis Android yang dikembangkan menggunakan **Flutter dan bahasa pemrograman Dart**. Aplikasi ini dirancang untuk membantu mahasiswa dalam mengelola catatan materi perkuliahan, informasi mata kuliah, jadwal pembelajaran, serta aktivitas akademik secara lebih terstruktur.
+StudyLog merupakan aplikasi pencatatan materi perkuliahan berbasis Android yang dikembangkan menggunakan **Flutter dan bahasa pemrograman Dart**. Aplikasi ini dirancang untuk membantu mahasiswa dalam mengelola catatan materi perkuliahan, informasi mata kuliah, jadwal pembelajaran, serta aktivitas akademik secara lebih terstruktur. Selain mencatat, StudyLog menyediakan pencarian dan penyaringan catatan, penandaan favorit, penilaian dosen per pertemuan, serta pengingat harian untuk penilaian dan catatan kelas yang terlewat.
 
 StudyLog menerapkan pendekatan *offline-first* dengan menggunakan SQLite sebagai penyimpanan lokal pada perangkat. Ketika koneksi tersedia, perubahan data dikirim melalui REST API berbasis Node.js dan disimpan ke database MySQL. Aplikasi juga memanfaatkan WebSocket untuk menerima pemberitahuan perubahan data dari perangkat lain secara real-time.
 
@@ -26,6 +30,8 @@ Proyek ini dikembangkan sebagai tugas Project-Based Learning (PjBL) mata kuliah 
 | Backend | Node.js dan Express |
 | Database Server | MySQL |
 | Komunikasi | HTTP REST API dan WebSocket |
+| Notifikasi | Notifikasi lokal terjadwal (`flutter_local_notifications`) |
+| Ikon Aplikasi | Buku catatan dengan lonceng, grafik, dan bintang (lihat bagian 3.4) |
 | Repository | [studylog-v2](https://github.com/2411009-yuda/studylog-v2) |
 | Mata Kuliah | Pemrograman Aplikasi Bergerak |
 | Program Studi | S-1 Informatika |
@@ -50,6 +56,8 @@ StudyLog dikembangkan sebagai solusi pencatatan materi perkuliahan melalui peran
 
 Berbeda dengan aplikasi yang sepenuhnya bergantung pada koneksi internet, StudyLog menyimpan perubahan terlebih dahulu pada SQLite di perangkat. Ketika server tersedia, perubahan dikirim melalui API ke database MySQL. Aplikasi juga memanfaatkan WebSocket untuk menerima pemberitahuan perubahan dari perangkat lain.
 
+Selain pencatatan, StudyLog membantu mahasiswa tetap disiplin: penilaian dosen pada setiap pertemuan dan catatan untuk kelas yang sudah berlangsung dipantau, lalu diingatkan melalui notifikasi apabila masih terlewat.
+
 ---
 
 ## 3. Fitur Aplikasi
@@ -65,15 +73,19 @@ Berbeda dengan aplikasi yang sepenuhnya bergantung pada koneksi internet, StudyL
 - Menghapus catatan melalui dialog konfirmasi.
 - Melakukan validasi formulir sebelum penyimpanan.
 - Menyimpan catatan secara permanen menggunakan SQLite.
+- Mencari catatan berdasarkan judul, topik, isi, serta nama atau kode mata kuliah. Pencarian tidak membedakan huruf besar/kecil, dan seluruh kata kunci harus ditemukan.
+- Menyaring daftar dengan chip **Semua**, **Favorit**, atau satu chip per mata kuliah. Filter Favorit dan filter mata kuliah dapat digabung.
+- Menandai catatan sebagai favorit dari halaman detail.
+- Menampilkan catatan yang dikelompokkan per mata kuliah dengan jumlah catatan pada tiap kelompok.
 
 #### B. Navigasi dan Halaman Aplikasi
 
 Aplikasi memiliki empat tab utama pada navigasi bawah, yaitu:
 
-- **Beranda:** Menampilkan ringkasan informasi mahasiswa, jumlah catatan, status sinkronisasi, jadwal terdekat, dan pintasan.
-- **Profil:** Menampilkan dan mengubah informasi mahasiswa serta foto profil.
-- **Mata Kuliah:** Menampilkan daftar mata kuliah dan informasi detailnya.
-- **Kontak:** Menyediakan informasi kontak serta tautan pengembang.
+- **Beranda:** Menampilkan sambutan dan identitas mahasiswa, status sinkronisasi, kelas yang sedang berlangsung atau berikutnya, ringkasan jumlah catatan dengan tombol *Lihat Catatan* dan *Buat Catatan*, tautan ke Tentang Aplikasi, serta lencana lifecycle. Bilah atas menampilkan indikator real-time dan lonceng notifikasi.
+- **Profil:** Menampilkan dan mengubah informasi mahasiswa. Foto profil dapat dipilih dari galeri, diambil dengan kamera, atau dikembalikan ke foto bawaan.
+- **Mata Kuliah:** Menampilkan daftar mata kuliah dan halaman detail (kode, SKS, dosen pengampu, jadwal, deskripsi, dan prasyarat) dengan tombol **Nilai Dosen**.
+- **Kontak:** Menyediakan informasi kontak serta tautan pengembang yang dapat dibuka atau disalin.
 
 Tombol tambah (+) ditempatkan di tengah navigasi bawah untuk membuka formulir catatan baru.
 
@@ -85,11 +97,33 @@ Tombol tambah (+) ditempatkan di tengah navigasi bawah untuk membuka formulir ca
 - Mengelola data mata kuliah dan jadwal dari database.
 - Menyimpan cache mata kuliah dan jadwal pada perangkat.
 
+#### D. Penilaian Dosen per Pertemuan
+
+- Mahasiswa menilai dosen pada setiap pertemuan (1–16) dari halaman detail mata kuliah.
+- Lima aspek dinilai dengan skala 1 (sangat kurang) sampai 5 (sangat baik): penguasaan materi, kejelasan penyampaian, kesesuaian dengan RPS, interaksi dan respons, serta ketepatan waktu dan disiplin. Komentar bersifat opsional (maksimal 300 karakter).
+- Halaman penilaian menampilkan rata-rata skor beserta kategorinya dan jumlah pertemuan yang sudah dinilai.
+- Penilaian bersifat *offline-first*: disimpan di perangkat, masuk antrian, lalu dikirim ke server. Menilai ulang pertemuan yang sama akan menggantikan penilaian sebelumnya.
+- Pita status menampilkan kondisi offline, jumlah penilaian yang menunggu dikirim, atau penilaian yang ditolak server.
+
+#### E. Pengingat dan Notifikasi
+
+- Lonceng pada Beranda menampilkan jumlah hal yang terlewat dan membuka layar **Notifikasi**.
+- Dua jenis pengingat dihitung otomatis:
+  1. **Penilaian dosen:** pertemuan yang sudah berlangsung tetapi belum dinilai.
+  2. **Catatan kelas:** kelas yang sudah selesai dalam 7 hari terakhir tetapi belum memiliki catatan untuk mata kuliah tersebut pada tanggalnya.
+- Mengetuk pengingat membuka halaman penilaian atau formulir catatan yang sudah terisi sesuai jadwal kelas.
+- Notifikasi sistem dikirim setiap hari pada pukul 19:00 (waktu perangkat, zona Asia/Makassar) selama masih ada yang terlewat. Tombol **Uji notifikasi** tersedia untuk mencobanya langsung.
+- Pengaturan pengingat berada di `lib/config/pengingat_config.dart` (lihat bagian 7.6).
+
+#### F. Tentang Aplikasi
+
+Halaman yang dibuka dari Beranda dan menampilkan logo, versi, deskripsi, daftar fitur, dan teknologi yang digunakan. Isinya bersumber dari `lib/config/app_info.dart`, dan versinya dijaga agar selalu sama dengan `pubspec.yaml` oleh `test/tentang_test.dart`.
+
 ### 3.2 Fitur Pengembangan (PjBL)
 
 | Fitur | Deskripsi | Tingkat Workbook |
 |---|---|---|
-| Tiga tabel relasional | Menggunakan tabel `mata_kuliah`, `jadwal`, dan `catatan` pada MySQL | Lanjutan |
+| Empat tabel relasional | Menggunakan tabel `mata_kuliah`, `jadwal`, `catatan`, dan `penilaian_dosen` pada MySQL | Lanjutan |
 | Pengurutan catatan | Terbaru, Terlama, dan Judul A–Z | Dasar |
 | Ekspor teks | Menyalin dan membagikan satu catatan atau seluruh catatan | Lanjutan |
 | Tombol tambah (+) | Memilih mata kuliah secara otomatis berdasarkan jadwal hari ini | Pengembangan tambahan |
@@ -97,7 +131,13 @@ Tombol tambah (+) ditempatkan di tengah navigasi bawah untuk membuka formulir ca
 | Real-time WebSocket | Memberikan pemberitahuan ketika catatan berubah dari perangkat lain | Pengembangan tambahan |
 | Cache data | Menyimpan mata kuliah dan jadwal terakhir agar dapat digunakan saat offline | Pengembangan tambahan |
 | Kartu jadwal | Menampilkan kelas yang sedang berlangsung atau berikutnya pada Beranda | Pengembangan tambahan |
-| Halaman Tentang Aplikasi | Menampilkan deskripsi, fitur, teknologi, versi, dan informasi pengembang | Pengembangan tambahan |
+| Halaman Tentang Aplikasi | Menampilkan logo, deskripsi, fitur, teknologi, dan versi aplikasi | Pengembangan tambahan |
+| Pencarian dan filter | Mencari catatan dan menyaring per mata kuliah atau favorit | Pengembangan tambahan |
+| Favorit | Menandai catatan penting; disimpan di perangkat | Pengembangan tambahan |
+| Pengelompokan catatan | Daftar catatan dikelompokkan per mata kuliah | Pengembangan tambahan |
+| Penilaian dosen | Penilaian 5 aspek per pertemuan, offline-first dan tersinkron | Pengembangan tambahan |
+| Pengingat dan notifikasi | Pengingat penilaian dan catatan kelas yang terlewat, termasuk notifikasi harian | Pengembangan tambahan |
+| Ikon aplikasi | Ikon peluncur khusus StudyLog untuk Android, iOS, macOS, web, dan Windows | Pengembangan tambahan |
 
 ### 3.3 Mekanisme Tombol Tambah (+)
 
@@ -109,6 +149,24 @@ Prioritas pemilihan mata kuliah:
 3. Jika belum ada, mata kuliah berikutnya pada hari tersebut.
 
 Pengguna tetap dapat mengganti mata kuliah secara manual.
+
+### 3.4 Ikon Aplikasi
+
+<p align="center">
+  <img src="assets/images/studylog_logo.png" alt="Ikon StudyLog" width="140">
+</p>
+
+Ikon berupa buku catatan terbuka berlatar biru dengan tiga penanda fitur: lonceng (pengingat), grafik (penilaian), dan bintang (favorit).
+
+| Platform | Lokasi |
+|---|---|
+| Android | `android/app/src/main/res/mipmap-*/` (ikon lama dan adaptive icon) dan `drawable/ic_launcher_background.xml` |
+| iOS | `ios/Runner/Assets.xcassets/AppIcon.appiconset/` |
+| macOS | `macos/Runner/Assets.xcassets/AppIcon.appiconset/` |
+| Web | `web/icons/` dan `web/favicon.png` |
+| Windows | `windows/runner/resources/app_icon.ico` |
+
+Gambar sumber disimpan di `assets/icon/studylog_icon_source.png`, sedangkan logo untuk halaman Tentang berada di `assets/images/studylog_logo.png`. Setelah mengganti ikon, jalankan `flutter clean` lalu pasang ulang aplikasi agar ikon baru tampil pada peluncur.
 
 ---
 
@@ -128,27 +186,30 @@ Pengguna tetap dapat mengganti mata kuliah secara manual.
 | MySQL | Database server |
 | HTTP | Komunikasi REST API |
 | WebSocket | Komunikasi pemberitahuan real-time |
+| flutter_local_notifications | Notifikasi pengingat terjadwal |
 | Git | Pengelolaan versi source code |
 
 ### 4.2 Paket Flutter
 
-Versi paket yang tercantum pada laporan dan konfigurasi proyek:
+Batas versi paket pada `pubspec.yaml` (versi yang benar-benar terpasang tercatat di `pubspec.lock`):
 
 | Paket | Versi |
 |---|---|
-| Provider | 6.1.2 |
-| HTTP | 1.2.2 |
-| sqflite | 2.4.1 |
-| path | 1.9.0 |
-| web_socket_channel | 3.0.1 |
-| share_plus | 10.1.4 |
-| image_picker | 1.1.2 |
-| url_launcher | 6.3.1 |
-| flutter_lints | 6.0.0 |
+| provider | ^6.1.2 |
+| http | ^1.2.2 |
+| sqflite | ^2.4.1 |
+| path | ^1.9.0 |
+| web_socket_channel | ^3.0.1 |
+| share_plus | ^10.1.4 |
+| image_picker | ^1.1.2 |
+| url_launcher | ^6.3.1 |
+| flutter_local_notifications | ^21.0.0 |
+| timezone | ^0.11.0 |
+| flutter_lints (dev) | ^6.0.0 |
 
 Kebutuhan pengembangan:
 - Flutter SDK stabil.
-- Dart SDK dengan constraint 3.8.1 pada `pubspec.yaml`.
+- Dart SDK dengan constraint `^3.8.1` pada `pubspec.yaml`. Karena `pubspec.lock` mensyaratkan Dart 3.13 atau lebih baru, gunakan Flutter SDK stabil yang terbaru.
 - Android SDK dan Android Emulator atau perangkat Android.
 - Node.js versi 18 atau lebih baru.
 - MySQL atau MariaDB.
@@ -173,6 +234,13 @@ flowchart LR
     Sync --> SQLite
     Sync -->|HTTP REST| API["API Node.js + Express"]
 
+    VM --> Nilai["PenilaianRepository"]
+    Nilai --> SQLite
+    Nilai -->|HTTP REST| API
+
+    VM --> Ingat["PengingatViewModel"]
+    Ingat --> Notif["NotifikasiService<br/>Notifikasi lokal"]
+
     API --> MySQL[("MySQL")]
 
     API -.->|WebSocket: Pemberitahuan Perubahan| RT["RealtimeService"]
@@ -186,10 +254,14 @@ flowchart LR
 | UI | `screens/`, `widgets/` | Menampilkan state dan meneruskan aksi pengguna |
 | ViewModel | `viewmodels/` | Mengelola state layar menggunakan ChangeNotifier |
 | Repository | `data/catatan_repository.dart` | Membaca dan menulis catatan ke SQLite serta mencatat perubahan ke antrian |
+| Repository penilaian | `data/penilaian_repository.dart` | Menyimpan penilaian dosen dan antriannya pada cache lokal, lalu mengirimnya ke server |
+| Repository mata kuliah | `data/mata_kuliah_repository.dart` | Mengambil mata kuliah dan jadwal dari server dengan cache lokal |
 | Penyimpanan lokal | `data/sqlite_local_store.dart` | Mengelola tabel catatan, antrian, dan cache |
 | Sinkronisasi | `data/sinkron_service.dart` | Mengirim antrian ke API dan mengambil data server |
 | API Client | `data/api_client.dart` | Mengirim HTTP JSON serta menangani timeout dan error |
 | Real-time | `data/realtime_service.dart` | Mendengarkan WebSocket dan melakukan sambung ulang |
+| Pengingat | `viewmodels/pengingat_view_model.dart`, `utils/pengingat_utils.dart` | Menghitung penilaian dan catatan kelas yang terlewat |
+| Notifikasi | `services/notifikasi_service.dart` | Menjadwalkan dan menampilkan notifikasi lokal |
 | Backend | `studylog_api/src/` | Menyediakan REST API dan layanan WebSocket |
 
 ### 5.3 Mengapa Aplikasi Tidak Langsung Terhubung ke MySQL?
@@ -207,6 +279,8 @@ Sebagai gantinya, aplikasi Flutter berkomunikasi dengan API Node.js. API bertuga
 - Setelah antrian dikirim, aplikasi mengambil data terbaru dari server dan menyatukannya dengan data lokal.
 - Pesan WebSocket hanya menjadi pemberitahuan perubahan, sedangkan data terbaru tetap diambil melalui REST API.
 - Aplikasi melakukan sinkronisasi kembali ketika koneksi tersedia.
+- Penilaian dosen memakai prinsip yang sama: satu entri antrian per (mata kuliah, pertemuan), dikirim secara idempoten melalui `PUT`.
+- Penanda favorit hanya tersimpan di perangkat dan tidak dikirim ke server.
 
 ---
 
@@ -219,41 +293,50 @@ studylog-v2/
 │
 ├── android/
 ├── assets/
+│   ├── icon/
+│   │   └── studylog_icon_source.png
 │   └── images/
+│       ├── profile.png
+│       └── studylog_logo.png
 │
 ├── ios/
 │
 ├── lib/
 │   ├── main.dart
 │   ├── app/
-│   │   └── Konfigurasi aplikasi, router, route, dan tema
+│   │   └── Aplikasi, router, route, dan tema
 │   ├── config/
-│   │   └── Konfigurasi API dan WebSocket
+│   │   └── Konfigurasi API, informasi aplikasi, dan pengingat
 │   ├── data/
 │   │   ├── api_client.dart
+│   │   ├── local_store.dart
 │   │   ├── sqlite_local_store.dart
 │   │   ├── catatan_repository.dart
+│   │   ├── mata_kuliah_repository.dart
+│   │   ├── penilaian_repository.dart
 │   │   ├── sinkron_service.dart
 │   │   └── realtime_service.dart
 │   ├── models/
-│   │   └── Model Catatan, Course, Jadwal, dan Student
+│   │   └── Catatan, Course, Jadwal, PenilaianDosen, dan Student
 │   ├── screens/
-│   │   └── Beranda, Daftar, Form, Detail, Profil,
-│   │       Mata Kuliah, Kontak, dan Tentang
+│   │   └── Beranda, Daftar, Form, Detail, Profil, Mata Kuliah,
+│   │       Detail Mata Kuliah, Penilaian Dosen, Notifikasi,
+│   │       Kontak, dan Tentang
 │   ├── services/
-│   │   └── Layanan ekspor teks
+│   │   └── Layanan ekspor teks dan notifikasi
 │   ├── utils/
-│   │   └── Validator, jadwal, urutan, ekspor, dan UUID
+│   │   └── Validator, jadwal, pencarian, pengelompokan, pengurutan,
+│   │       ekspor, pengingat, dan UUID
 │   ├── viewmodels/
-│   │   └── Pengelolaan state dan logika presentasi
+│   │   └── Catatan, Mata Kuliah, Penilaian, Pengingat, dan Profil
 │   └── widgets/
-│       └── Komponen UI, banner, dan indikator status
+│       └── Komponen UI, lonceng, banner, dan indikator status
 │
 ├── linux/
 ├── macos/
 │
 ├── screenshots/
-│   └── Dokumentasi tampilan aplikasi (.jpg)
+│   └── Dokumentasi tampilan aplikasi (.jpeg)
 │
 ├── studylog_api/
 │   ├── db/
@@ -283,8 +366,8 @@ Folder utama:
 - `studylog_api/`: Source code backend Node.js dan integrasi MySQL.
 - `test/`: Pengujian otomatis aplikasi Flutter.
 - `screenshots/`: Dokumentasi gambar tampilan aplikasi.
-- `assets/`: Aset gambar aplikasi.
-- `android/`: Konfigurasi platform Android.
+- `assets/`: Aset gambar aplikasi, termasuk logo dan gambar sumber ikon.
+- `android/`: Konfigurasi platform Android (termasuk ikon peluncur).
 
 ---
 
@@ -362,11 +445,15 @@ Buka file:
 android/app/src/main/AndroidManifest.xml
 ```
 
-Pastikan konfigurasi izin internet tersedia:
+Pastikan izin berikut tersedia:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 ```
+
+`INTERNET` dipakai untuk REST API dan WebSocket. `POST_NOTIFICATIONS` diperlukan untuk menampilkan notifikasi pada Android 13 atau lebih baru, sedangkan `RECEIVE_BOOT_COMPLETED` memungkinkan jadwal notifikasi dipulihkan setelah perangkat dinyalakan ulang. Manifest juga memuat dua `receiver` milik `flutter_local_notifications` untuk keperluan tersebut.
 
 Pada bagian application:
 
@@ -375,6 +462,8 @@ Pada bagian application:
     android:usesCleartextTraffic="true"
     ... >
 ```
+
+Nama aplikasi pada peluncur diatur melalui `android:label="StudyLog"` dan ikonnya melalui `android:icon="@mipmap/ic_launcher"`.
 
 Konfigurasi `usesCleartextTraffic` diperlukan untuk pengujian server lokal yang menggunakan HTTP/WS tanpa TLS. Konfigurasi ini hanya ditujukan untuk lingkungan demonstrasi dan bukan pengaturan keamanan untuk produksi.
 
@@ -440,6 +529,19 @@ Pastikan port 3000 diizinkan pada Windows Firewall.
 
 > **Perhatian:** SQLite melalui sqflite ditujukan untuk Android/iOS dan bukan target web/Chrome.
 
+### 7.6 Konfigurasi Pengingat
+
+Pengaturan berada pada `lib/config/pengingat_config.dart`:
+
+| Pengaturan | Nilai Bawaan | Keterangan |
+|---|---|---|
+| `awalSemesterBawaan` | 7 September 2026 | Tanggal minggu pertama kuliah. **Ubah setiap semester**, karena jumlah pertemuan yang sudah berlangsung dihitung dari tanggal ini dan jadwal mingguan |
+| `jamPengingatBawaan` / `menitPengingatBawaan` | 19:00 | Waktu notifikasi harian |
+| `hariMundurKelas` | 7 hari | Batas ke belakang untuk kelas yang belum dicatat |
+| `zonaWaktuPengingat` | `Asia/Makassar` | Zona waktu penjadwalan notifikasi (WITA) |
+
+Pada Android 13 atau lebih baru, izin notifikasi diminta saat pertama kali dibutuhkan (ada yang perlu diingatkan atau saat mencoba **Uji notifikasi**), bukan saat aplikasi dibuka. Notifikasi dijadwalkan dengan mode *inexact*, sehingga waktu tampilnya dapat bergeser beberapa menit mengikuti pengelolaan baterai Android.
+
 ---
 
 ## 8. Database
@@ -448,13 +550,14 @@ StudyLog menggunakan MySQL sebagai database server dan SQLite sebagai penyimpana
 
 ### 8.1 MySQL (Sumber Data Utama)
 
-Database server memiliki tiga tabel utama:
+Database server memiliki empat tabel utama:
 
 | Tabel | Kolom Penting | Fungsi |
 |---|---|---|
 | `mata_kuliah` | id, kode, nama, sks, dosen, deskripsi, prasyarat | Menyimpan informasi mata kuliah |
 | `jadwal` | id, mata_kuliah_id, hari, jam_mulai, jam_selesai, kelas, ruang | Menyimpan jadwal perkuliahan |
 | `catatan` | id, client_id, mata_kuliah_id, topik, judul, isi, tanggal, diubah | Menyimpan catatan mahasiswa |
+| `penilaian_dosen` | id, mata_kuliah_id, pertemuan, skor_penguasaan, skor_penyampaian, skor_kesesuaian, skor_interaksi, skor_disiplin, komentar, dinilai, diubah | Menyimpan penilaian dosen per pertemuan |
 
 ### 8.2 Entity Relationship Diagram (ERD)
 
@@ -462,6 +565,7 @@ Database server memiliki tiga tabel utama:
 erDiagram
     MATA_KULIAH ||--o{ JADWAL : memiliki
     MATA_KULIAH ||--o{ CATATAN : dicatat_pada
+    MATA_KULIAH ||--o{ PENILAIAN_DOSEN : dinilai_pada
 
     MATA_KULIAH {
         int id PK
@@ -493,11 +597,26 @@ erDiagram
         datetime tanggal
         datetime diubah
     }
+
+    PENILAIAN_DOSEN {
+        int id PK
+        int mata_kuliah_id FK
+        tinyint pertemuan
+        tinyint skor_penguasaan
+        tinyint skor_penyampaian
+        tinyint skor_kesesuaian
+        tinyint skor_interaksi
+        tinyint skor_disiplin
+        varchar komentar
+        datetime dinilai
+        datetime diubah
+    }
 ```
 
 Relasi database:
 - Satu mata kuliah dapat memiliki beberapa jadwal perkuliahan.
 - Satu mata kuliah dapat memiliki beberapa catatan.
+- Satu mata kuliah dapat memiliki beberapa penilaian dosen, satu untuk setiap pertemuan (pertemuan 1–16, skor 1–5 pada tiap aspek). Kombinasi `mata_kuliah_id` dan `pertemuan` bersifat unik.
 - `client_id` digunakan sebagai identitas unik catatan dari aplikasi.
 
 Data awal pada skema database mencakup 8 mata kuliah dan 8 jadwal semester 5 kelas IFB5J.
@@ -510,15 +629,16 @@ Database lokal menggunakan nama:
 studylog_local.db
 ```
 
-Skema lokal menggunakan tiga tabel utama:
+Skema lokal (versi basis data 2) menggunakan empat tabel:
 
 | Tabel | Isi | Fungsi |
 |---|---|---|
 | `catatan` | id lokal, client_id, server_id, data mata kuliah, topik, judul, isi, tanggal | Menyimpan salinan lokal catatan |
 | `antrian` | client_id, op, versi, percobaan, error, dibuat | Menyimpan perubahan yang belum dikirim |
-| `cache` | kunci dan nilai | Menyimpan cache mata kuliah dan jadwal |
+| `cache` | kunci dan nilai | Menyimpan cache mata kuliah, jadwal, serta salinan dan antrian penilaian dosen (dalam bentuk JSON) |
+| `favorit` | client_id | Menyimpan penanda favorit; hanya ada di perangkat ini |
 
-Tabel antrian mendukung operasi `upsert` dan `hapus`, sehingga perubahan dapat dikirim kembali ketika server tersedia.
+Tabel antrian mendukung operasi `upsert` dan `hapus`, sehingga perubahan dapat dikirim kembali ketika server tersedia. Tabel `favorit` ditambahkan pada migrasi v1 ke v2 tanpa menyentuh data catatan yang sudah ada.
 
 ---
 
@@ -537,6 +657,16 @@ Backend menggunakan Node.js dan Express untuk menghubungkan aplikasi Flutter den
 | GET / PUT / DELETE | `/api/catatan/:id` | Melihat, mengubah, dan menghapus catatan |
 | PUT | `/api/catatan/klien/:clientId` | Membuat atau memperbarui catatan berdasarkan clientId |
 | DELETE | `/api/catatan/klien/:clientId` | Menghapus catatan berdasarkan clientId |
+| GET | `/api/penilaian` | Mengambil seluruh penilaian dosen |
+| PUT | `/api/penilaian/:mataKuliahId/:pertemuan` | Membuat (201) atau mengganti (200) penilaian satu pertemuan |
+| DELETE | `/api/penilaian/:mataKuliahId/:pertemuan` | Menghapus penilaian; selalu 204 |
+
+Body `PUT /api/penilaian/...` berisi lima skor wajib (1–5) dan komentar opsional:
+
+```json
+{ "skor": { "penguasaan": 5, "penyampaian": 4, "kesesuaian": 4,
+            "interaksi": 3, "disiplin": 4 }, "komentar": "opsional" }
+```
 
 ### 9.2 WebSocket
 
@@ -555,7 +685,7 @@ Jenis pemberitahuan yang digunakan:
 
 Pesan WebSocket tidak menjadi sumber data catatan. Ketika menerima pemberitahuan, aplikasi melakukan sinkronisasi melalui REST API untuk memperoleh data terbaru.
 
-Layanan real-time juga menyediakan mekanisme debounce dan sambung ulang bertahap. README awal menjelaskan polling cadangan ketika WebSocket tidak tersedia.
+Layanan real-time juga menyediakan mekanisme debounce, sambung ulang bertahap, dan ping berkala untuk mendeteksi koneksi yang mati diam-diam. Sinkronisasi berkala (polling) berjalan sebagai cadangan ketika masih ada perubahan tertunda, server tidak terjangkau, atau WebSocket terputus. Pemberitahuan WebSocket saat ini hanya mencakup catatan; penilaian dosen diperbarui melalui sinkronisasi REST.
 
 Dokumentasi backend lebih lanjut dapat dilihat pada:
 
@@ -569,7 +699,7 @@ Dokumentasi backend lebih lanjut dapat dilihat pada:
 
 Pengujian StudyLog terdiri atas pengujian otomatis dan pengujian fungsional.
 
-Pengujian otomatis Flutter tersedia pada direktori `test/`, sedangkan pengujian backend Node.js tersedia pada `studylog_api/test/`.
+Pengujian otomatis Flutter tersedia pada direktori `test/`, sedangkan pengujian backend Node.js tersedia pada `studylog_api/test/` (`validators.test.js` dan `hub.test.js`, tanpa memerlukan database).
 
 Pengujian Flutter menggunakan fake server dan penyimpanan lokal dalam memori untuk memeriksa logika aplikasi tanpa harus selalu mengakses MySQL atau WebSocket sungguhan.
 
@@ -588,8 +718,14 @@ Oleh karena itu, keberhasilan pengujian otomatis tidak secara langsung membuktik
 | Real-time | `realtime_service_test.dart`, `realtime_flow_test.dart` | Koneksi, reconnect, debounce, dan sinkronisasi |
 | Pengurutan/Ekspor | `urutan_ekspor_test.dart`, `urutan_ekspor_flow_test.dart` | Urutan data dan fungsi ekspor |
 | Jadwal | `jadwal_test.dart` | Pemilihan mata kuliah berdasarkan jadwal |
+| Pencarian | `cari_catatan_test.dart` | Penyaringan catatan berdasarkan kata kunci |
+| Pengelompokan | `kelompok_catatan_test.dart` | Ringkasan dan filter catatan per mata kuliah |
+| Favorit | `favorit_test.dart` | Menandai, melepas, dan mempertahankan favorit |
+| Penilaian dosen | `penilaian_test.dart` | Simpan, ganti, antrian offline, dan sinkronisasi penilaian |
+| Pengingat | `pengingat_test.dart` | Perhitungan penilaian dan catatan kelas yang terlewat |
+| UUID | `uuid_test.dart` | Pembuatan identitas klien |
 | Profil | `profile_viewmodel_test.dart` | Pengelolaan state profil |
-| Tentang | `tentang_test.dart` | Navigasi dan informasi aplikasi |
+| Tentang | `tentang_test.dart` | Navigasi, daftar fitur, dan kesesuaian versi dengan `pubspec.yaml` |
 | ViewModel | `view_model_test.dart` | Pengelolaan state dan sinkronisasi |
 
 **Catatan status:** Daftar di atas menunjukkan file pengujian yang tersedia dalam source code. Status keberhasilan seluruh pengujian otomatis harus mengacu pada keluaran perintah aktual.
@@ -668,6 +804,10 @@ Beberapa batasan implementasi yang tercantum dalam laporan:
 5. **Pengurutan.** Pilihan pengurutan kembali ke Terbaru ketika aplikasi dibuka ulang.
 6. **Keamanan server.** Konfigurasi demonstrasi menggunakan HTTP/WS tanpa TLS dan API belum memiliki autentikasi.
 7. **Platform penyimpanan.** SQLite melalui sqflite ditujukan untuk Android/iOS dan bukan target web.
+8. **Favorit tidak tersinkron.** Penanda favorit hanya tersimpan di perangkat dan hilang jika aplikasi dihapus atau data aplikasi dibersihkan.
+9. **Pengingat berbasis perkiraan.** Aplikasi belum memiliki data tanggal pertemuan, sehingga jumlah pertemuan dihitung dari `awalSemesterBawaan` dan jadwal mingguan. Libur atau kelas pengganti tidak diperhitungkan, dan tanggal tersebut harus diperbarui setiap semester.
+10. **Penilaian dosen belum berautentikasi.** Seperti catatan, penilaian dibagikan oleh semua perangkat yang memakai server yang sama.
+11. **Notifikasi mengikuti pengelolaan baterai.** Karena memakai penjadwalan *inexact*, notifikasi dapat tertunda beberapa menit.
 
 ### 11.3 Saran Pengembangan
 
@@ -678,6 +818,8 @@ Pengembangan selanjutnya dapat mencakup:
 - Membantu mengembangkan strategi resolusi konflik data antarperangkat.
 - Menerapkan proses migrasi skema SQLite ketika terjadi perubahan struktur tabel.
 - Menambahkan penyimpanan preferensi pengurutan agar tetap tersimpan secara persisten.
+- Menyinkronkan favorit ke server setelah autentikasi tersedia.
+- Mengambil tanggal pertemuan dan hari libur dari server agar pengingat lebih akurat.
 - Membantu melengkapi pengujian integrasi pada perangkat Android menggunakan SQLite dan server sebenarnya.
 
 ---
@@ -694,6 +836,9 @@ Pengembangan selanjutnya dapat mencakup:
 | Ikon real-time terputus tetapi data tetap masuk | WebSocket terblokir atau polling cadangan aktif | Periksa jaringan dan firewall |
 | `No devices found` | Emulator mati atau USB debugging belum aktif | Jalankan emulator dan periksa `flutter devices` |
 | Data hilang setelah restart | Menggunakan checkpoint M2 | Pastikan aplikasi dijalankan menggunakan kode M3 |
+| Notifikasi tidak muncul | Izin notifikasi ditolak atau penghemat baterai aktif | Aktifkan izin notifikasi StudyLog di Pengaturan, lalu coba tombol **Uji notifikasi** |
+| Pengingat tidak sesuai pertemuan | `awalSemesterBawaan` belum diperbarui | Ubah tanggal awal semester di `lib/config/pengingat_config.dart` |
+| Ikon lama masih tampil | Peluncur masih menyimpan ikon sebelumnya | Jalankan `flutter clean`, hapus aplikasi dari perangkat, lalu `flutter run` kembali |
 
 ### Perintah Pemeriksaan ADB pada Windows PowerShell
 
@@ -730,6 +875,10 @@ StudyLog dikembangkan secara bertahap mengikuti milestone praktikum M1 hingga M3
 | M1 | Formulir interaktif, validasi input, setState, dan SnackBar | Form dan validasi |
 | M2 | Navigasi multi-layar, Navigator, Provider, ChangeNotifier, Bottom Navigation, dan Tentang Aplikasi | Navigasi dan pengelolaan state |
 | M3 | Integrasi MySQL melalui Node.js, SQLite lokal, antrian offline, jadwal dari database, pengurutan, ekspor teks, dan WebSocket | Integrasi backend dan sinkronisasi |
+
+### Pengembangan Lanjutan
+
+Setelah M3, StudyLog ditambah dengan pencarian dan filter catatan, favorit, pengelompokan per mata kuliah, penilaian dosen per pertemuan, pengingat dan notifikasi harian, pembaruan halaman Tentang, serta ikon aplikasi baru.
 
 ### Perkembangan Commit
 

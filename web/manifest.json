@@ -1,11 +1,11 @@
 {
-    "name": "study_log_app",
-    "short_name": "study_log_app",
+    "name": "StudyLog",
+    "short_name": "StudyLog",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "Aplikasi study log per workbook",
+    "background_color": "#1B4FA0",
+    "theme_color": "#1B4FA0",
+    "description": "StudyLog - aplikasi catatan perkuliahan",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

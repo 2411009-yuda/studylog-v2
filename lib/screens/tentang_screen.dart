@@ -32,11 +32,21 @@ class TentangScreen extends StatelessWidget {
           // ---- Identitas aplikasi ----
           Column(
             children: [
-              const CircleAvatar(
-                radius: 40,
-                backgroundColor: UmColors.blue,
-                child: Icon(Icons.menu_book_rounded,
-                    size: 44, color: Colors.white),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  'assets/images/studylog_logo.png',
+                  width: 96,
+                  height: 96,
+                  fit: BoxFit.cover,
+                  semanticLabel: 'Logo StudyLog',
+                  errorBuilder: (_, _, _) => const CircleAvatar(
+                    radius: 40,
+                    backgroundColor: UmColors.blue,
+                    child: Icon(Icons.menu_book_rounded,
+                        size: 44, color: Colors.white),
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               Text(
