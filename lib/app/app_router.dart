@@ -6,6 +6,7 @@ import '../screens/course_detail_screen.dart';
 import '../screens/daftar_catatan_screen.dart';
 import '../screens/detail_catatan_screen.dart';
 import '../screens/main_shell.dart';
+import '../screens/penilaian_dosen_screen.dart';
 import '../screens/tentang_screen.dart';
 import '../widgets/um_widgets.dart';
 import 'routes.dart';
@@ -37,6 +38,12 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
       final kode = settings.arguments;
       if (kode is String) {
         return _page(settings, CourseDetailScreen(courseId: kode));
+      }
+      return _page(settings, const _NotFoundScreen());
+    case AppRoutes.penilaian:
+      final kode = settings.arguments;
+      if (kode is String) {
+        return _page(settings, PenilaianDosenScreen(courseId: kode));
       }
       return _page(settings, const _NotFoundScreen());
   }

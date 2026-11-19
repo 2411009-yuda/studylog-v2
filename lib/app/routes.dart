@@ -14,5 +14,6 @@ class AppRoutes {
 
   // Fitur profil mahasiswa
   static const courseDetail = '/mata-kuliah';
+  static const penilaian = '/mata-kuliah/penilaian';
   static const contact = '/kontak'; // juga dipakai tombol "Lihat Kontak"
 }

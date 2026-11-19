@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../app/routes.dart';
 import '../app/theme.dart';
 import '../viewmodels/mata_kuliah_view_model.dart';
 import '../viewmodels/profile_viewmodel.dart';
@@ -142,6 +143,16 @@ class CourseDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => Navigator.pushNamed(
+              context,
+              AppRoutes.penilaian,
+              arguments: course.kode,
+            ),
+            icon: const Icon(Icons.rate_review_outlined),
+            label: const Text('Nilai Dosen'),
+          ),
+          const SizedBox(height: 8),
           OutlinedButton.icon(
             // Tombol kembali: menghapus layar ini dari back stack.
             onPressed: () => Navigator.pop(context),

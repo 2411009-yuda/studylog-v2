@@ -1,4 +1,4 @@
--- StudyLog: skema relasional 3 tabel + data awal (semester 5, kelas IFB5J).
+-- StudyLog: skema relasional 4 tabel + data awal (semester 5, kelas IFB5J).
 -- Aman dijalankan berulang kali (idempotent).
 
 CREATE DATABASE IF NOT EXISTS studylog
@@ -42,6 +42,31 @@ CREATE TABLE IF NOT EXISTS catatan (
   CONSTRAINT fk_catatan_mk FOREIGN KEY (mata_kuliah_id)
     REFERENCES mata_kuliah(id) ON DELETE RESTRICT,
   INDEX idx_catatan_tanggal (tanggal)
+) ENGINE=InnoDB;
+
+-- Penilaian mahasiswa terhadap dosen pada tiap pertemuan (skala 1-5 per aspek).
+-- Satu baris per (mata kuliah, pertemuan); mengirim ulang berarti mengganti.
+CREATE TABLE IF NOT EXISTS penilaian_dosen (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  mata_kuliah_id   INT UNSIGNED NOT NULL,
+  pertemuan        TINYINT UNSIGNED NOT NULL,        -- 1..16
+  skor_penguasaan  TINYINT UNSIGNED NOT NULL,        -- penguasaan materi
+  skor_penyampaian TINYINT UNSIGNED NOT NULL,        -- kejelasan penyampaian
+  skor_kesesuaian  TINYINT UNSIGNED NOT NULL,        -- kesesuaian dengan RPS
+  skor_interaksi   TINYINT UNSIGNED NOT NULL,        -- interaksi dan respons
+  skor_disiplin    TINYINT UNSIGNED NOT NULL,        -- ketepatan waktu
+  komentar         VARCHAR(300) NOT NULL DEFAULT '',
+  dinilai          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  diubah           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_penilaian_mk FOREIGN KEY (mata_kuliah_id)
+    REFERENCES mata_kuliah(id) ON DELETE CASCADE,
+  CONSTRAINT uq_penilaian UNIQUE (mata_kuliah_id, pertemuan),
+  CONSTRAINT ck_pertemuan CHECK (pertemuan BETWEEN 1 AND 16),
+  CONSTRAINT ck_skor CHECK (
+    skor_penguasaan  BETWEEN 1 AND 5 AND skor_penyampaian BETWEEN 1 AND 5 AND
+    skor_kesesuaian  BETWEEN 1 AND 5 AND skor_interaksi   BETWEEN 1 AND 5 AND
+    skor_disiplin    BETWEEN 1 AND 5)
 ) ENGINE=InnoDB;
 
 -- ---- Data awal: mata kuliah ----

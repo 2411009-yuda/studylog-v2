@@ -69,6 +69,15 @@ class FakeServer {
     _jd(8, 5, 5, '20:30', '22:00', 'LAB A (FIKOM)'),
   ];
 
+  /// Isi tabel penilaian_dosen (satu baris per mata kuliah + pertemuan).
+  final List<Map<String, Object?>> penilaian = [];
+  int _idPenilaian = 1;
+
+  /// Jika diisi, PUT penilaian ditolak dengan 400 dan pesan ini.
+  String? tolakPenilaian;
+  int putPenilaianCount = 0;
+  int deletePenilaianCount = 0;
+
   /// Isi tabel catatan (urutan sisip; GET mengembalikan terbaru dulu).
   final List<Map<String, Object?>> catatan = [];
   int _berikutnya = 1;
@@ -176,6 +185,69 @@ class FakeServer {
     return balasan;
   }
 
+  static const _aspek = [
+    'penguasaan',
+    'penyampaian',
+    'kesesuaian',
+    'interaksi',
+    'disiplin',
+  ];
+
+  /// Meniru endpoint /api/penilaian milik server Node.js.
+  http.Response _penilaian(http.Request r, List<String> seg) {
+    if (seg.length == 2 && r.method == 'GET') return _json(penilaian);
+    if (seg.length != 4) return _error(404, 'Endpoint tidak ditemukan');
+
+    final mkId = int.tryParse(seg[2]);
+    final pertemuan = int.tryParse(seg[3]);
+    if (mkId == null || mkId <= 0) {
+      return _error(400, 'ID mata kuliah tidak valid');
+    }
+    if (pertemuan == null || pertemuan < 1 || pertemuan > 16) {
+      return _error(400, 'Pertemuan harus 1 sampai 16');
+    }
+    final index = penilaian.indexWhere(
+        (p) => p['mataKuliahId'] == mkId && p['pertemuan'] == pertemuan);
+
+    if (r.method == 'DELETE') {
+      deletePenilaianCount++;
+      if (index >= 0) penilaian.removeAt(index);
+      return http.Response('', 204);
+    }
+    if (r.method == 'PUT') {
+      if (tolakPenilaian != null) return _error(400, tolakPenilaian!);
+      putPenilaianCount++;
+      final body = jsonDecode(r.body) as Map<String, dynamic>;
+      final skor = body['skor'];
+      final lengkap = skor is Map &&
+          _aspek.every((k) {
+            final n = skor[k];
+            return n is int && n >= 1 && n <= 5;
+          });
+      if (!lengkap) {
+        return _error(400, 'Semua aspek wajib dinilai dengan skor 1 sampai 5');
+      }
+      if (!mataKuliah.any((m) => m['id'] == mkId)) {
+        return _error(400, 'Mata kuliah tidak ditemukan');
+      }
+      final row = <String, Object?>{
+        'id': index >= 0 ? penilaian[index]['id'] : _idPenilaian++,
+        'mataKuliahId': mkId,
+        'pertemuan': pertemuan,
+        'skor': {for (final k in _aspek) k: skor[k]},
+        'komentar': ((body['komentar'] as String?) ?? '').trim(),
+        'dinilaiPada': tanggalBaru,
+      };
+      if (index >= 0) {
+        penilaian[index] = row;
+        return _json(row);
+      }
+      penilaian.add(row);
+      return _json(row, 201);
+    }
+    return _error(404, 'Endpoint tidak ditemukan');
+  }
+
   Future<http.Response> _proses(http.Request r) async {
 
     final seg = r.url.pathSegments;
@@ -183,6 +255,7 @@ class FakeServer {
 
     if (r.method == 'GET' && seg[1] == 'mata-kuliah') return _json(mataKuliah);
     if (r.method == 'GET' && seg[1] == 'jadwal') return _json(jadwal);
+    if (seg[1] == 'penilaian') return _penilaian(r, seg);
     if (seg[1] != 'catatan') return _error(404, 'Endpoint tidak ditemukan');
 
     if (seg.length == 2) {

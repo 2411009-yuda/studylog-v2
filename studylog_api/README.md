@@ -1,7 +1,8 @@
 # StudyLog API (Node.js + MySQL)
 
-REST API untuk aplikasi Flutter StudyLog. Tiga tabel relasional:
-`mata_kuliah` 1—N `jadwal`, dan `mata_kuliah` 1—N `catatan`.
+REST API untuk aplikasi Flutter StudyLog. Empat tabel relasional:
+`mata_kuliah` 1—N `jadwal`, `mata_kuliah` 1—N `catatan`, dan
+`mata_kuliah` 1—N `penilaian_dosen`.
 
 ## Persiapan
 1. Pasang Node.js (v18+) dan MySQL (atau MariaDB), pastikan MySQL berjalan.
@@ -41,7 +42,26 @@ Body PUT sama dengan POST, ditambah `tanggal` opsional (`YYYY-MM-DD HH:MM:SS`)
 agar catatan yang dibuat offline tetap bertanggal saat dibuat. `tanggal`
 hanya dipakai saat membuat; pembaruan tidak mengubahnya.
 
-Body POST/PUT: `{ "mataKuliahId": 5, "topik": "State", "judul": "...", "isi": "..." }`
+### Penilaian dosen per pertemuan
+Satu penilaian per (mata kuliah, pertemuan 1–16). Skor 1–5 untuk lima aspek:
+`penguasaan`, `penyampaian`, `kesesuaian`, `interaksi`, `disiplin`; `komentar`
+opsional (maks. 300 karakter). Idempoten: PUT berulang menghasilkan keadaan sama.
+
+| Metode | Path | Keterangan |
+|---|---|---|
+| GET | `/api/penilaian` | semua penilaian |
+| PUT | `/api/penilaian/:mataKuliahId/:pertemuan` | buat (201) atau ganti (200) |
+| DELETE | `/api/penilaian/:mataKuliahId/:pertemuan` | hapus; selalu 204 |
+
+Body PUT:
+```json
+{ "skor": { "penguasaan": 5, "penyampaian": 4, "kesesuaian": 4,
+            "interaksi": 3, "disiplin": 4 }, "komentar": "opsional" }
+```
+Semua aspek wajib → bila tidak, `400`. Tabel dibuat otomatis oleh `npm run db:init`
+(database lama aman: data yang ada tidak dihapus).
+
+Body POST/PUT catatan: `{ "mataKuliahId": 5, "topik": "State", "judul": "...", "isi": "..." }`
 Kesalahan validasi → `400 { "error": "pesan" }`; tidak ditemukan → `404`.
 
 ## Real-time (WebSocket)

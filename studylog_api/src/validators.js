@@ -52,4 +52,45 @@ function parseId(raw) {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
-module.exports = { validateCatatan, parseId, parseTanggal, isUuid };
+/** Aspek penilaian dosen (kode harus sama dengan aplikasi Flutter). */
+const ASPEK_PENILAIAN = ['penguasaan', 'penyampaian', 'kesesuaian', 'interaksi', 'disiplin'];
+const JUMLAH_PERTEMUAN = 16;
+const SKOR_MIN = 1;
+const SKOR_MAKS = 5;
+
+/** Pertemuan dari path: bilangan bulat 1..JUMLAH_PERTEMUAN, selain itu null. */
+function parsePertemuan(raw) {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 && n <= JUMLAH_PERTEMUAN ? n : null;
+}
+
+/**
+ * Validasi body penilaian dosen: { skor: { penguasaan: 1-5, ... }, komentar? }.
+ * Semua aspek wajib diisi. Mengembalikan { error } atau { value }.
+ */
+function validatePenilaian(body) {
+  const b = body && typeof body === 'object' ? body : {};
+  const skor = b.skor && typeof b.skor === 'object' && !Array.isArray(b.skor) ? b.skor : {};
+
+  for (const aspek of ASPEK_PENILAIAN) {
+    const n = skor[aspek];
+    if (!Number.isInteger(n) || n < SKOR_MIN || n > SKOR_MAKS) {
+      return { error: 'Semua aspek wajib dinilai dengan skor 1 sampai 5' };
+    }
+  }
+
+  if (b.komentar !== undefined && b.komentar !== null && typeof b.komentar !== 'string') {
+    return { error: 'Komentar harus berupa teks' };
+  }
+  const komentar = typeof b.komentar === 'string' ? b.komentar.trim() : '';
+  if (komentar.length > 300) return { error: 'Komentar maksimal 300 karakter' };
+
+  const bersih = {};
+  for (const aspek of ASPEK_PENILAIAN) bersih[aspek] = skor[aspek];
+  return { value: { skor: bersih, komentar } };
+}
+
+module.exports = {
+  validateCatatan, parseId, parseTanggal, isUuid,
+  validatePenilaian, parsePertemuan, ASPEK_PENILAIAN, JUMLAH_PERTEMUAN,
+};

@@ -8,10 +8,12 @@ import '../data/sinkron_service.dart';
 import '../data/sqlite_local_store.dart';
 import '../config/api_config.dart';
 import '../data/mata_kuliah_repository.dart';
+import '../data/penilaian_repository.dart';
 import '../data/realtime_service.dart';
 import '../services/ekspor_service.dart';
 import '../viewmodels/catatan_view_model.dart';
 import '../viewmodels/mata_kuliah_view_model.dart';
+import '../viewmodels/penilaian_view_model.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/sinkron_pemicu.dart';
 import 'app_router.dart';
@@ -76,6 +78,11 @@ class StudyLogApp extends StatelessWidget {
             MataKuliahRepository(api, local),
             clock: clock,
           )..muat(),
+        ),
+        ChangeNotifierProvider<PenilaianViewModel>(
+          create: (_) => PenilaianViewModel(
+            PenilaianRepository(api, local, clock: clock),
+          )..mulai(),
         ),
       ],
       child: SinkronPemicu(

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../data/realtime_service.dart';
 import '../utils/sinkron_aksi.dart';
 import '../viewmodels/catatan_view_model.dart';
+import '../viewmodels/penilaian_view_model.dart';
 
 /// Mengatur kapan data ditarik/dikirim:
 /// - real-time: kabar dari server (WebSocket) memicu sinkronisasi, begitu juga
@@ -87,11 +88,14 @@ class _SinkronPemicuState extends State<SinkronPemicu>
   void _berkala() {
     if (!mounted) return;
     final vm = context.read<CatatanViewModel>();
+    final penilaian = context.read<PenilaianViewModel>();
     final realtime = _realtime;
     final realtimeBermasalah =
         realtime != null && realtime.aktif && !realtime.tersambung;
     if (vm.tertunda > 0 ||
+        penilaian.tertunda > 0 ||
         vm.status == StatusSinkron.offline ||
+        penilaian.status == StatusSinkron.offline ||
         realtimeBermasalah) {
       unawaited(sinkronSemua(context));
     }

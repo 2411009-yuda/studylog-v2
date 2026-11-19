@@ -3,7 +3,9 @@
 const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
-const { validateCatatan, parseId, isUuid } = require('./validators');
+const {
+  validateCatatan, parseId, isUuid, validatePenilaian, parsePertemuan,
+} = require('./validators');
 
 const hhmm = (t) => String(t).slice(0, 5); // '19:00:00' -> '19:00'
 
@@ -37,6 +39,21 @@ const mapCatatan = (r) => ({
   judul: r.judul,
   isi: r.isi,
   tanggal: r.tanggal, // 'YYYY-MM-DD HH:MM:SS' (dateStrings: true)
+});
+
+const mapPenilaian = (r) => ({
+  id: r.id,
+  mataKuliahId: r.mata_kuliah_id,
+  pertemuan: r.pertemuan,
+  skor: {
+    penguasaan: r.skor_penguasaan,
+    penyampaian: r.skor_penyampaian,
+    kesesuaian: r.skor_kesesuaian,
+    interaksi: r.skor_interaksi,
+    disiplin: r.skor_disiplin,
+  },
+  komentar: r.komentar,
+  dinilaiPada: r.diubah, // 'YYYY-MM-DD HH:MM:SS' (dateStrings: true)
 });
 
 const SELECT_CATATAN = `
@@ -217,6 +234,69 @@ function createApp(pool, { siarkan = () => {} } = {}) {
       'DELETE FROM catatan WHERE client_id = ?', [clientId]);
     // Menghapus yang sudah tidak ada bukan perubahan: tidak perlu disiarkan.
     if (result.affectedRows > 0) kabarkan('dihapus', ada[0] ? ada[0].id : null, clientId);
+    res.status(204).end();
+  }));
+
+  // ---- Penilaian dosen per pertemuan ----
+  // Dialamatkan dengan (mataKuliahId, pertemuan) dan idempoten: PUT berulang
+  // dengan isi sama menghasilkan keadaan yang sama.
+
+  app.get('/api/penilaian', wrap(async (_req, res) => {
+    const [rows] = await pool.query(
+      'SELECT * FROM penilaian_dosen ORDER BY mata_kuliah_id, pertemuan');
+    res.json(rows.map(mapPenilaian));
+  }));
+
+  /** Buat jika belum ada (201), ganti jika sudah ada (200). */
+  app.put('/api/penilaian/:mataKuliahId/:pertemuan', wrap(async (req, res) => {
+    const mataKuliahId = parseId(req.params.mataKuliahId);
+    if (!mataKuliahId) return res.status(400).json({ error: 'ID mata kuliah tidak valid' });
+    const pertemuan = parsePertemuan(req.params.pertemuan);
+    if (!pertemuan) return res.status(400).json({ error: 'Pertemuan harus 1 sampai 16' });
+    const { error, value } = validatePenilaian(req.body);
+    if (error) return res.status(400).json({ error });
+
+    try {
+      const [ada] = await pool.query(
+        'SELECT id FROM penilaian_dosen WHERE mata_kuliah_id = ? AND pertemuan = ?',
+        [mataKuliahId, pertemuan]);
+      const s = value.skor;
+      await pool.query(
+        `INSERT INTO penilaian_dosen
+           (mata_kuliah_id, pertemuan, skor_penguasaan, skor_penyampaian,
+            skor_kesesuaian, skor_interaksi, skor_disiplin, komentar)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           skor_penguasaan = VALUES(skor_penguasaan),
+           skor_penyampaian = VALUES(skor_penyampaian),
+           skor_kesesuaian = VALUES(skor_kesesuaian),
+           skor_interaksi = VALUES(skor_interaksi),
+           skor_disiplin = VALUES(skor_disiplin),
+           komentar = VALUES(komentar),
+           diubah = NOW()`,
+        [mataKuliahId, pertemuan, s.penguasaan, s.penyampaian, s.kesesuaian,
+          s.interaksi, s.disiplin, value.komentar]);
+      const [rows] = await pool.query(
+        'SELECT * FROM penilaian_dosen WHERE mata_kuliah_id = ? AND pertemuan = ?',
+        [mataKuliahId, pertemuan]);
+      res.status(ada[0] ? 200 : 201).json(mapPenilaian(rows[0]));
+    } catch (e) {
+      if (e.code === 'ER_NO_REFERENCED_ROW_2') {
+        return res.status(400).json({ error: 'Mata kuliah tidak ditemukan' });
+      }
+      throw e;
+    }
+  }));
+
+  /** Hapus; selalu 204 (menghapus yang sudah hilang dianggap berhasil). */
+  app.delete('/api/penilaian/:mataKuliahId/:pertemuan', wrap(async (req, res) => {
+    const mataKuliahId = parseId(req.params.mataKuliahId);
+    if (!mataKuliahId) return res.status(400).json({ error: 'ID mata kuliah tidak valid' });
+    const pertemuan = parsePertemuan(req.params.pertemuan);
+    if (!pertemuan) return res.status(400).json({ error: 'Pertemuan harus 1 sampai 16' });
+    await pool.query(
+      'DELETE FROM penilaian_dosen WHERE mata_kuliah_id = ? AND pertemuan = ?',
+      [mataKuliahId, pertemuan]);
     res.status(204).end();
   }));
 
